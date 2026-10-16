@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-16
+
 ### Added
 
 - SPEC.md: a draft of the format 2 protocol in octets (descriptor, plan, steps, manifest), the receiver's checks
