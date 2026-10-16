@@ -114,7 +114,7 @@ down in FEATURES.md.
 
 ## Hardware and transport (later)
 
-Firmware talks to the PC over wire_weaver (RTT through the debug probe first), never a text protocol on a COM
+Firmware talks to the PC over WireWeaver (RTT through the debug probe first), never a text protocol on a COM
 port. The first board is a Nucleo G0B1RE (`wire_weaver/examples/nucleo_g0b1re`).
 
 ## Commits

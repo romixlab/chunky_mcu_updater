@@ -24,7 +24,7 @@ someone who can already talk to the device (they can always refuse to send an up
 | Bootloader (write-protected flash, holds the public key) | Every boot decision; the only writer of ACTIVE and FLOOR | Talking to anyone: it has no transport |
 | Application (the running, verified image) | Receiving a plan, writing DFU, asking for a swap, confirming itself | Deciding what is bootable: the bootloader checks again |
 | Server / planner | Nothing. It holds no key | Plans, manifests it relays, blobs |
-| Transport (wire_weaver over RTT, USB, radio, a modem) | Nothing | Everything it carries |
+| Transport (WireWeaver over RTT, USB, radio, a modem) | Nothing | Everything it carries |
 | Device manifest | Nothing. It is a hint for the planner | A wrong manifest only wastes a transfer |
 
 The one trust anchor is the public key in the bootloader. Everything between the signer and the bootloader may

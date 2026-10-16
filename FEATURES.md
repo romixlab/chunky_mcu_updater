@@ -121,7 +121,7 @@ Design: [SECURITY.md](SECURITY.md).
   swap and the bank backend run through the same checks.
 - ✅ **SIM-3 parser-fuzz-proptests** — `chunky_sim/tests/fuzz.rs`, proptest, `just fuzz [CASES]` (20000 per property;
   `CHUNKY_FUZZ_CASES`, a small default in `just test`). Garbage and mutated real input into `open_descriptor` (both
-  `Trust` kinds; a mutated sealed descriptor is never accepted), the plan header (fixed and shrink_wrap readers
+  `Trust` kinds; a mutated sealed descriptor is never accepted), the plan header (fixed and ShrinkWrap readers
   agree), `Step::view` and the stream framing, the server's manifest parser (what parses encodes back to the same
   bytes). The apply engine gets 1 to 4 rounds of hostile plans (steps dropped, duplicated, swapped, retargeted, WRITEs
   of junk with their right hash, wrong sizes, byte edits, junk bodies, header edits, counts fixed up or not), each
@@ -178,13 +178,13 @@ Design: [SECURITY.md](SECURITY.md).
   the git SHA and build time, colour off without a TTY or with `NO_COLOR`. Key files, `Manifest::of_running_image`
   and `DirStore::list` are in `chunky_server`. Open: the Python wrapper (PY), no progress bar (nothing here takes
   seconds), completion of store ids is not live.
-- 💡 **CLI-2 pypi-wheels** — the Rust tooling (chunky CLI, later the wire_weaver C generator) as binary wheels on
+- 💡 **CLI-2 pypi-wheels** — the Rust tooling (chunky CLI, later the WireWeaver C generator) as binary wheels on
   PyPI, so C users run it with `uvx` and need no Rust toolchain. Publishing needs the user's OK.
 
 ## NET — transport
 
-- 📋 **NET-1 wire-weaver-transport** — the update API over wire_weaver (RTT first), no COM ports: implement
-  wire_weaver `ww_dfu` (STD-12: UpdateNode, BootControl, Inventory, Stage, StageBulk) on the chunky core.
+- 📋 **NET-1 wire-weaver-transport** — the update API over WireWeaver (RTT first), no COM ports: implement
+  WireWeaver `ww_dfu` (STD-12: UpdateNode, BootControl, Inventory, Stage, StageBulk) on the chunky core.
 
 ## PROTO — shared protocol spec
 
@@ -194,7 +194,7 @@ Design: [SECURITY.md](SECURITY.md).
   transport framing as layers on top; three delivery modes (A/B live, in place from a stored plan, in place live),
   per-step and bulk delivery, stored form = wire form, resume rules, the in-place planner rule; vectors/ folder with
   firmware pairs; open points: hash length, Ed25519, release-time signing, version floor and seq. The WireWeaver
-  carrier is `ww_dfu` (wire_weaver STD-12). Segmentation is the transport's: CAN and Modbus do not aggregate.
+  carrier is `ww_dfu` (WireWeaver STD-12). Segmentation is the transport's: CAN and Modbus do not aggregate.
   Drafted for format 2 ([SPEC.md](SPEC.md), local only, nothing posted upstream): descriptor 64 + 64, plan
   header 145, ERASE 3 / COPY 13 / WRITE 13 + one chunk, manifest v2, little-endian; the receiver's checks in the
   landed order (refusals that need no key on the header and the raw descriptor bytes, then the seal over the
@@ -205,10 +205,10 @@ Design: [SECURITY.md](SECURITY.md).
   8 B, Modbus 253 B, `ww_dfu` pieces), the planner-made vectors annotated. Next: Roman reviews; the in-place
   session record and journal formats (BOOT-6).
 
-- 🧪 **PROTO-3 typed-plan-format** — spike: plan header, signed descriptor and steps as shrink_wrap types with a
-  fixed little-endian layout (`chunky_format`, format 2): one schema, read by the shrink_wrap path (app, full
+- 🧪 **PROTO-3 typed-plan-format** — spike: plan header, signed descriptor and steps as ShrinkWrap types with a
+  fixed little-endian layout (`chunky_format`, format 2): one schema, read by the ShrinkWrap path (app, full
   bootloader with WireWeaver), by the fixed-layout fast path `#[derive_shrink_wrap]` generates for such types
-  (wire_weaver SW-44: offset consts, `from_fixed`, no `BufReader`) for a minimal bootloader, and by the C reader
+  (WireWeaver SW-44: offset consts, `from_fixed`, no `BufReader`) for a minimal bootloader, and by the C reader
   generated from the same derive (`chunky_format/c/chunky_format.h`). `signed!` stamps a `Signed<T>` envelope:
   the body's encoded bytes and a seal over the domain and those bytes, reachable only through `open` (verify, then
   decode). Golden vectors (`chunky_format/vectors`, `c/golden.h`; made by `chunky_server::vectors`, see below) checked by all three readers (`just test-c`),

@@ -10,6 +10,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - SPEC.md: a draft of the format 2 protocol in octets (descriptor, plan, steps, manifest), the receiver's checks
   in order, stream framing, delivery modes, resume and segmentation, with the vectors annotated. (PROTO-1)
 
+### Changed
+
+- Docs: product names written WireWeaver and ShrinkWrap in prose
+
 ## [0.11.0] - 2026-10-15
 
 ### Added

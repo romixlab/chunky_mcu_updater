@@ -17,7 +17,7 @@ bug in one of them; the reference implementation is `chunky_format` (the types),
 |---|---|---|
 | 0 | Octets: descriptor, plan header, steps, manifest; the rules a receiver applies to them | this document, §3 to §7 |
 | 1 | Delivery: which node receives a plan, applies or stores it, and how it resumes | §8, §9 |
-| 2 | Carrier: messages, sessions, flow control, segmentation | the transport; for WireWeaver `ww_dfu` (wire_weaver STD-12), §10 |
+| 2 | Carrier: messages, sessions, flow control, segmentation | the transport; for WireWeaver `ww_dfu` (WireWeaver STD-12), §10 |
 
 Layer 0 is the same on every device and every transport. It is generic over the flash: the erase unit, the
 write unit, the chunk size and the partition sizes are parameters of a **geometry** (§2), never constants of the
@@ -404,7 +404,7 @@ carrier's:
 - Integrity of a link (CRC) is the carrier's and is not a trust boundary: every step is checked by its hash and
   the image by its seal.
 
-The WireWeaver carrier is `ww_dfu` (wire_weaver STD-12): `Stage::begin` / `StageBulk::begin_bulk` take the 145
+The WireWeaver carrier is `ww_dfu` (WireWeaver STD-12): `Stage::begin` / `StageBulk::begin_bulk` take the 145
 header bytes (`MAX_HEADER_LEN` 256), `Stage::erase` / `copy` / `write` carry the fields of one step with its index,
 `StageBulk` carries the body as `PlanSegment { offset, data }` on a credit sink, and `Inventory` returns the
 manifest.

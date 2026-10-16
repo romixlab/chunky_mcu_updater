@@ -1,4 +1,4 @@
-//! Golden vectors and the pinned layout of format 2 (PROTO-3): the shrink_wrap path and the fixed-layout fast
+//! Golden vectors and the pinned layout of format 2 (PROTO-3): the ShrinkWrap path and the fixed-layout fast
 //! path write the same bytes, read them to the same values, and those bytes are the ones in `vectors/`. The C
 //! reader (`c/chunky_format.h`, generated) checks the same vectors in `c/test.c` (`just test-c`).
 //!
@@ -107,7 +107,7 @@ fn steps() -> Vec<Step<'static>> {
     ]
 }
 
-/// The plan: header, then each step and its data. Written with the fast path, checked against shrink_wrap.
+/// The plan: header, then each step and its data. Written with the fast path, checked against ShrinkWrap.
 fn plan() -> Vec<u8> {
     let mut body = Vec::new();
     for step in steps() {

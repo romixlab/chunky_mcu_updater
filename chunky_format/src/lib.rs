@@ -1,9 +1,9 @@
-//! The chunky wire format as shrink_wrap types (PROTO-3, a spike): one format, two readers.
+//! The chunky wire format as ShrinkWrap types (PROTO-3, a spike): one format, two readers.
 //!
-//! The image descriptor and the plan header are `#[derive_shrink_wrap(.., fixed_layout)]` types: their shrink_wrap
+//! The image descriptor and the plan header are `#[derive_shrink_wrap(.., fixed_layout)]` types: their ShrinkWrap
 //! encoding is a fixed little-endian byte layout, so the same bytes are read
 //!
-//! - by the generated shrink_wrap path (`des_shrink_wrap` through a `BufReader`), what an app or a full
+//! - by the generated ShrinkWrap path (`des_shrink_wrap` through a `BufReader`), what an app or a full
 //!   bootloader with WireWeaver links anyway, and
 //! - by the generated fixed-layout fast path (`from_fixed`, offset consts, SW-44): straight loads at constant
 //!   offsets, no `BufReader`, for a minimal bootloader; and by the C reader generated from the same types
@@ -71,7 +71,7 @@ pub const DESCRIPTOR_DOMAIN: &[u8] = b"chunky image descriptor v2";
 /// A malformed descriptor or plan, or one whose seal does not check.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FormatError {
-    /// Too short, an unknown op or scheme: what shrink_wrap refuses.
+    /// Too short, an unknown op or scheme: what ShrinkWrap refuses.
     Wire(ShrinkWrapError),
     /// Not a descriptor or plan.
     BadMagic,
@@ -354,7 +354,7 @@ pub fn read_header_fixed(buf: &[u8]) -> Result<PlanHeader, FormatError> {
     Ok(header)
 }
 
-/// Reads a plan header through shrink_wrap and checks magic and format.
+/// Reads a plan header through ShrinkWrap and checks magic and format.
 pub fn read_header_sw(buf: &[u8]) -> Result<PlanHeader, FormatError> {
     let header = PlanHeader::from_ww_bytes(buf.get(..PlanHeader::ENCODED_LEN).unwrap_or(buf))?;
     header.check()?;
