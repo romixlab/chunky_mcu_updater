@@ -1,0 +1,21 @@
+[package]
+name = "chunky_ww"
+description = "chunky on WireWeaver: serves ww_dfu UpdateNode, BootControl, Inventory and Stage on the apply engine and a boot backend (no_std)"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+
+[features]
+# Passed on to chunky: one of them must be chosen.
+ed25519 = ["chunky/ed25519"]
+unsigned = ["chunky/unsigned"]
+
+[dependencies]
+chunky.workspace = true
+embedded-storage.workspace = true
+# Local checkout next to this repository (~/git/wire_weaver), as for chunky_format.
+ww_dfu = { path = "../../wire_weaver/ww_stdlib/ww_dfu", default-features = false }
+wire_weaver = { path = "../../wire_weaver/wire_weaver", default-features = false }
+
+[dev-dependencies]
+chunky = { workspace = true, features = ["ed25519", "unsigned"] }
