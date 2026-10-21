@@ -84,7 +84,7 @@ name = "bench_fw_image"
 version = "0.11.1"
 dependencies = [
  "bench_layout",
- "object",
+ "object 0.37.3",
 ]
 
 [[package]]
@@ -266,6 +266,7 @@ dependencies = [
  "chunky_format",
  "ed25519-dalek",
  "getrandom 0.3.4",
+ "object 0.40.0",
  "sha2 0.10.9",
 ]
 
@@ -957,6 +958,15 @@ name = "object"
 version = "0.37.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff76201f031d8863c38aa7f905eca4f53abbfa15f609db4277d44cd8938f33fe"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
+name = "object"
+version = "0.40.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd229a0361b9d0d4396176e02d65897f487eebeab7caa6d443855ee152ca0b9c"
 dependencies = [
  "memchr",
 ]

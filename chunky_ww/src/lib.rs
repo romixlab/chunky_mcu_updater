@@ -44,7 +44,7 @@ use embedded_storage::nor_flash::{NorFlash, ReadNorFlash};
 use wire_weaver::prelude::MaxLen;
 use ww_dfu::{
     BootState, ChunkState, Error, LastResult, MAX_CHUNKS_PAGE, MAX_PIECE_LEN, MAX_PRODUCT_LEN, NodeInfo, Offers,
-    Outcome, Profile, Progress, Role, Session, Slot, SlotLayout, SlotSwitch, StageLimits, Target,
+    Outcome, Profile, Progress, Role, Seal, Session, Slot, SlotLayout, SlotSwitch, StageLimits, Target,
 };
 
 /// `Error::Custom` code: the chunk a COPY or WRITE goes to is not blank (programmed, or torn by a cut). Nothing was
@@ -235,6 +235,11 @@ where
             }),
             product: MaxLen::new(self.config.product).expect("checked in new"),
             geometry_id: self.config.geometry.id(),
+            product_id: self.running.product_id,
+            seal: match self.config.trust.scheme() {
+                chunky::Scheme::Ed25519 => Seal::Ed25519,
+                chunky::Scheme::Unsigned => Seal::Unsigned,
+            },
             app_version: Some(self.running.version),
             version_floor: self.effective_floor(),
             manifest_digest: self.active_digest,
