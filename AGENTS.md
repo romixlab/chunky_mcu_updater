@@ -54,7 +54,7 @@ adding a dependency.
   (worked examples of it, the presets of the host tools), `descriptor.rs`
   (the sealed 128-byte image descriptor, `Trust` as the seal check, verify before decode), `floor.rs` (the version floor counter), `manifest.rs`,
   `plan.rs` (wire formats), `apply.rs` (the engine that runs an untrusted plan), `ecc.rs` (`EccError`,
-  `try_read`, `Masked`), `part.rs` (`Part`, `ReadOnly`), `backend.rs` (`BootBackend`).
+  `try_read`, `Masked`; `EccError` for `ww_ecc_flash` behind feature `ww-ecc-flash`), `part.rs` (`Part`, `ReadOnly`), `backend.rs` (`BootBackend`).
 - `chunky_swap/` — the embassy-boot backend, `no_std`: `boot()` is the bootloader's whole decision,
   `SwapUpdater` the application's handle, `Guarded` the state partition as embassy-boot gets it.
 - `chunky_bank/` — the hardware bank swap backend, `no_std`: `boot()` again the whole decision, `BankUpdater`

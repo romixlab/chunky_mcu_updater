@@ -21,12 +21,20 @@ series-stm32h7 = []
 series-rp235x = []
 # Your own FlashGeometry, const-checked with `checked_on`.
 chip-custom = []
+# `EccError` for the errors of WireWeaver's `ww_ecc_flash` (`EccStrictFlash`: a torn word reads as `Error::Ecc`),
+# the ECC-aware STM32 flash driver of bootloaders and apps (ECC-2). The firmware enables the family feature of
+# `ww_ecc_flash` (`stm32h7`, `stm32g0`) itself.
+ww-ecc-flash = ["dep:ww_ecc_flash"]
 
 [dependencies]
 chunky_format.workspace = true
 embedded-storage.workspace = true
 sha2.workspace = true
 ed25519-dalek = { workspace = true, optional = true }
+# Local checkout next to this repository (~/git/wire_weaver), as for shrink_wrap in chunky_format.
+ww_ecc_flash = { path = "../../wire_weaver/mcu/ww_ecc_flash", optional = true }
 
 [dev-dependencies]
-chunky = { path = ".", features = ["ed25519", "unsigned"] }
+chunky = { path = ".", features = ["ed25519", "unsigned", "ww-ecc-flash"] }
+# a family so the crate builds on the host; the tests only use its error type
+ww_ecc_flash = { path = "../../wire_weaver/mcu/ww_ecc_flash", features = ["stm32h7"] }

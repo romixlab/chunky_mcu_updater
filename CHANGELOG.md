@@ -5,6 +5,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `chunky` feature `ww-ecc-flash`: `EccError` for `ww_ecc_flash::Error` (WireWeaver's ECC-aware STM32 flash
+  driver), so a bootloader or app on an `EccStrictFlash` (G0, H7) sees a torn word as `ReadFault::Ecc` in
+  `try_read` and as zeros through `Masked`. The firmware enables `ww_ecc_flash`'s family feature. (ECC-2)
+
 ## [0.11.1] - 2026-10-16
 
 ### Added
