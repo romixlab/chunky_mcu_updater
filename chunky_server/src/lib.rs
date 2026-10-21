@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod elf;
 pub mod image;
 pub mod keys;
 pub mod manifest;
@@ -13,6 +14,7 @@ pub mod planner;
 pub mod store;
 pub mod vectors;
 
+pub use elf::{ElfError, payload_from_elf};
 pub use image::{ImageBuildError, ImageMeta, Signer, build_image};
 pub use manifest::{Manifest, ManifestParseError};
 pub use planner::{Plan, PlanStats, PlanningError, Policy, Release, Warning, plan};

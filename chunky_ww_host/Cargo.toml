@@ -1,0 +1,18 @@
+[package]
+name = "chunky_ww_host"
+description = "chunky on WireWeaver, host side: updates a chunky_ww device over ww_dfu (plan, pipelined steps, reboot, trial, confirm)"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+
+[dependencies]
+chunky = { workspace = true, features = ["ed25519", "unsigned"] }
+chunky_server.workspace = true
+chunky_ww = { workspace = true, features = ["ed25519", "unsigned"] }
+thiserror = "2"
+tokio = { version = "1", features = ["time"] }
+tracing = "0.1"
+# Local checkout next to this repository (~/git/wire_weaver), as for chunky_format and chunky_ww.
+wire_weaver = { path = "../../wire_weaver/wire_weaver" }
+wire_weaver_client = { path = "../../wire_weaver/wire_weaver_client" }
+ww_dfu = { path = "../../wire_weaver/ww_stdlib/ww_dfu" }

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["chunky", "chunky_format", "chunky_swap", "chunky_bank", "chunky_ww", "chunky_server", "chunky_sim", "embassy_torn", "chunky_cli", "bench/bench_layout", "bench/fw_image"]
+members = ["chunky", "chunky_format", "chunky_swap", "chunky_bank", "chunky_ww", "chunky_server", "chunky_sim", "embassy_torn", "chunky_cli", "chunky_ww_host", "bench/bench_layout", "bench/fw_image"]
 
 [workspace.package]
 version = "0.11.1"
@@ -13,6 +13,7 @@ chunky_format = { path = "chunky_format" }
 chunky_swap = { path = "chunky_swap" }
 chunky_bank = { path = "chunky_bank" }
 chunky_ww = { path = "chunky_ww" }
+chunky_ww_host = { path = "chunky_ww_host" }
 chunky_server = { path = "chunky_server" }
 chunky_sim = { path = "chunky_sim" }
 chunky_cli = { path = "chunky_cli" }
