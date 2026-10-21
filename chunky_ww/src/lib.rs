@@ -383,6 +383,9 @@ where
     /// `Stage::begin`: checks the header and the target's descriptor (nothing is written), or resumes the open
     /// session when `header` is byte for byte its header.
     pub fn begin(&mut self, target: Target, header: &[u8]) -> Result<Session, Error> {
+        if target != Target::Live {
+            return Err(Error::Unsupported);
+        }
         if let Some(applier) = &self.session {
             if !applier.is_plan(header) {
                 return Err(Error::Busy);
@@ -393,9 +396,6 @@ where
                 resumed: true,
                 resume_from: applier.steps_done(),
             });
-        }
-        if target != Target::Live {
-            return Err(Error::Unsupported);
         }
         let header: &[u8; PLAN_HEADER_LEN] = header.try_into().map_err(|_| Error::BadHeader)?;
         self.refresh()?;
