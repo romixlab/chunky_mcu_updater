@@ -8,6 +8,7 @@ repository.workspace = true
 [dependencies]
 chunky = { workspace = true, features = ["ed25519", "unsigned"] }
 chunky_server.workspace = true
+chunky_ww = { workspace = true, features = ["ed25519", "unsigned"] }
 thiserror = "2"
 tokio = { version = "1", features = ["time"] }
 tracing = "0.1"
