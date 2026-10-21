@@ -147,6 +147,9 @@ Design: [SECURITY.md](SECURITY.md).
   `HashMismatch`) for a release, plan the next one for that device without COPY and without skipping. The blob
   store is keyed by the same 8 bytes: key it by the full SHA-256 so two colliding chunks cannot replace each
   other (P2625#15oct-0923d).
+- ✅ **SRV-28 elf-payload** — `payload_from_elf`: the `PT_LOAD` segments of an ELF at their load addresses in
+  ACTIVE (`flash_base` per family), gaps `0xFF`; refused when a segment lies outside the image area or the image
+  does not start at ACTIVE.
 
 ## BOOT — boot backends
 
@@ -202,6 +205,18 @@ Design: [SECURITY.md](SECURITY.md).
   whole updates with lost requests and replies at `in_flight` 1 to 8, a power cut at every flash operation, the
   error paths one by one, hostile call sequences (`fuzz.rs`), the bank backend. Open: StageBulk and the `event`
   stream; the host driver and the CLI (NET-2); on hardware with B135 (vb135 BOOT-2).
+- 🚧 **NET-2 ww-dfu-host** — `chunky_ww_host`, the host side of `chunky_ww`: `Node::open` (NodeInfo, layout from
+  the chip presets by geometry id), `Node::stage` (manifest over `Inventory::chunks`, plan, steps with up to
+  `StageLimits::in_flight` in flight, lost replies resumed from `Stage::progress`, `OutOfOrder` followed,
+  `HashMismatch` resent, `CUSTOM_NOT_BLANK`/`SourceMismatch`/`Ecc` planned again after an abort, `finish`),
+  `reboot_into_trial` (a `Reconnect` finds the device again), `wait_confirmed` (Confirmed or Reverted),
+  `flash` for all of it, `seal_for_node` (product and seal scheme from NodeInfo). Timeouts from the layout:
+  an ERASE step covers the slowest erase of one block (`max_erase_time`: STM32H7 4 s per 128 KB sector,
+  DS13313), the boot state calls a confirm's STATE erase (B135 confirms on the first request after the reboot),
+  the reboot the swap. End-to-end tests over `in_process` USB HS on the simulated B135
+  (`tests/e2e.rs`). The CLI is wire_weaver's `ww dfu flash/status/confirm/revert` (CLT-33). Open: the version
+  from the ELF (ww_firmware_info's summary is not in the ELF as data), the known-ACTIVE digest shortcut
+  unused by `stage`, measuring on the B135 (erase stall, swap time).
 
 ## PROTO — shared protocol spec
 

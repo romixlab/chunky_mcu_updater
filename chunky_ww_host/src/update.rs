@@ -285,6 +285,9 @@ pub trait Reconnect {
     fn reconnect(&mut self, timeout: Duration) -> impl Future<Output = Result<DynClient, String>>;
 }
 
+/// The first call's timeout before the layout is known: an STM32H7 sector erase and the link.
+const BOOT_CALL_UNKNOWN: Duration = Duration::from_secs(6);
+
 /// A node's `ww_dfu` traits with what the host learnt of it.
 pub struct Node {
     /// The trait clients.
@@ -305,7 +308,15 @@ impl Node {
         timeouts: Option<Timeouts>,
     ) -> Result<Self, UpdateError> {
         let dfu = Dfu::new(device);
-        let info = dfu.node.node().call().await.map_err(UpdateError::Link)?;
+        // the first request after a reboot may meet the trial's confirm erasing STATE
+        let first = timeouts.map_or(BOOT_CALL_UNKNOWN, |t| t.boot_call());
+        let info = dfu
+            .node
+            .node()
+            .with_timeout(first)
+            .call()
+            .await
+            .map_err(UpdateError::Link)?;
         let geometry = match geometry {
             Some(g) if g.id() != info.geometry_id => {
                 return Err(UpdateError::WrongImage(format!(
@@ -332,7 +343,7 @@ impl Node {
             .dfu
             .node
             .node()
-            .with_timeout(self.timeouts.call)
+            .with_timeout(self.timeouts.boot_call())
             .call()
             .await
             .map_err(UpdateError::Link)?;
@@ -341,13 +352,18 @@ impl Node {
 
     /// `BootControl::boot_state`.
     pub async fn boot_state(&mut self) -> Result<BootState, UpdateError> {
-        self.dfu
+        let call = self
+            .dfu
             .boot
             .boot_state()
-            .with_timeout(self.timeouts.call)
-            .call()
-            .await
-            .map_err(UpdateError::Link)
+            .with_timeout(self.timeouts.boot_call())
+            .call();
+        // On a link that went down (the device reset) a call waits for a reconnect instead of timing out
+        // (wire_weaver CLT-36): the host's own deadline, for the poll that notices the reset.
+        match tokio::time::timeout(2 * self.timeouts.boot_call(), call).await {
+            Ok(state) => state.map_err(UpdateError::Link),
+            Err(_) => Err(UpdateError::Link(ClientError::Timeout)),
+        }
     }
 
     /// `BootControl::confirm`: keep the running image.
@@ -355,7 +371,7 @@ impl Node {
         self.dfu
             .boot
             .confirm()
-            .with_timeout(self.timeouts.call)
+            .with_timeout(self.timeouts.boot_call())
             .call()
             .await
             .map_err(UpdateError::call("BootControl::confirm"))
@@ -367,7 +383,7 @@ impl Node {
         self.dfu
             .boot
             .revert()
-            .with_timeout(self.timeouts.call)
+            .with_timeout(self.timeouts.boot_call())
             .call()
             .await
             .map_err(UpdateError::call("BootControl::revert"))
@@ -375,7 +391,14 @@ impl Node {
 
     /// `BootControl::reboot`. A reply lost to the reset itself counts as done.
     pub async fn reboot(&mut self, into: BootTarget) -> Result<(), UpdateError> {
-        match self.dfu.boot.reboot(into).with_timeout(self.timeouts.call).call().await {
+        match self
+            .dfu
+            .boot
+            .reboot(into)
+            .with_timeout(self.timeouts.boot_call())
+            .call()
+            .await
+        {
             Ok(()) | Err(CallError::Client(ClientError::Timeout | ClientError::Disconnected)) => Ok(()),
             Err(e) => Err(UpdateError::call("BootControl::reboot")(e)),
         }

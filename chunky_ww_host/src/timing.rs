@@ -40,6 +40,12 @@ pub struct Timeouts {
 }
 
 impl Timeouts {
+    /// A call to a node that may be erasing: the boot state calls. A single bank part that confirms its trial
+    /// image erases STATE (B135: right after the first request after the reboot) and answers nothing meanwhile.
+    pub fn boot_call(&self) -> Duration {
+        self.call + self.erase
+    }
+
     /// The timeouts for a device with this layout.
     pub fn for_geometry(geometry: &FlashGeometry) -> Self {
         let erase = max_erase_time(geometry);

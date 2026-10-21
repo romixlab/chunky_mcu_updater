@@ -1,0 +1,11 @@
+[package]
+name = "chunky_ww_test_api"
+description = "The API root of the simulated chunky device in chunky_ww_host's end-to-end tests: the four ww_dfu traits chunky_ww serves"
+version = "0.1.0"
+publish = false
+edition.workspace = true
+repository.workspace = true
+
+[dependencies]
+wire_weaver = { path = "../../../../wire_weaver/wire_weaver" }
+ww_dfu = { path = "../../../../wire_weaver/ww_stdlib/ww_dfu" }

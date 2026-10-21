@@ -31,6 +31,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   bank backend, cuts in a withdrawal) and hostile `ww_dfu` call sequences in `fuzz.rs`. (NET-1, SIM-3)
 - `just check-fw` builds `chunky_ww` for Cortex-M7 (unsigned, H7) and Cortex-M0+ (signed, G0). (NET-1)
 
+- `chunky_ww_host`: updates a `chunky_ww` device over WireWeaver: node, manifest, plan, pipelined steps with
+  timeouts from the layout (an STM32H7 sector erase up to 4 s), re-planning when the node finds DFU changed
+  (`CUSTOM_NOT_BLANK`), reboot into the trial, the device's confirm or revert; progress events. `ww dfu flash`
+  in wire_weaver is built on it. (NET-2)
+- `payload_from_elf`: the ACTIVE payload of an ELF by load address. (SRV-28)
 - `chunky_ww_host` example `usb_flash`: updates a `chunky_ww` device on USB with a sealed image (found by serial
   number or product string, found again by serial number after each reset), until `ww dfu flash` does it; vb135's
   `just update` uses it. (NET-2)

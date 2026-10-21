@@ -18,4 +18,9 @@ wire_weaver_client = { path = "../../wire_weaver/wire_weaver_client" }
 ww_dfu = { path = "../../wire_weaver/ww_stdlib/ww_dfu" }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["time", "rt-multi-thread", "macros"] }
+chunky_sim.workspace = true
+chunky_ww_test_api = { path = "tests/api" }
+tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "sync", "time"] }
+wire_weaver_client = { path = "../../wire_weaver/wire_weaver_client", features = ["in_process"] }
+ww_client_server = { path = "../../wire_weaver/ww_stdlib/ww_client_server" }
+ww_device = { path = "../../wire_weaver/ww_device" }

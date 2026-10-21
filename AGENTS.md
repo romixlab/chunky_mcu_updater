@@ -68,6 +68,9 @@ adding a dependency.
   (own nightly workspace). Needs `../wire_weaver` (SW-44), and so does every crate above it.
 - `chunky_server/` — host side: `image.rs` (build and seal), `store.rs` (blob store), `manifest.rs` (parse),
   `planner.rs`, `vectors.rs` (the one generator of the golden vectors and `c/golden.h`).
+- `chunky_ww_host/` — host side of `chunky_ww` over WireWeaver: `update.rs` (`Node`, `flash`, sealing for a
+  node), `push.rs` (pipelined steps), `timing.rs` (timeouts from the layout), `tests/e2e.rs` on `tests/sim` (the
+  simulated B135 behind `in_process` USB; `tests/api` is its API root). `ww dfu flash` in wire_weaver uses it.
 - `chunky_sim/` — `flash.rs` (NOR flash with per-family write rules, torn writes and erases, ECC faults),
   `device.rs` (a whole device on either backend, `Device<M, B>`), `tests/` (power-cut sweeps, security cases,
   planner properties; `tests/common` is the update loop they share).
