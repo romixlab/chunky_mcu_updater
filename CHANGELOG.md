@@ -12,6 +12,29 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - `chunky` feature `ww-ecc-flash`: `EccError` for `ww_ecc_flash::Error` (WireWeaver's ECC-aware STM32 flash
   driver), so a bootloader or app on an `EccStrictFlash` (G0, H7) sees a torn word as `ReadFault::Ecc` in
   `try_read` and as zeros through `Masked`. The firmware enables `ww_ecc_flash`'s family feature. (ECC-2)
+- `Applier::apply` and `apply_at`: steps as typed `StepOp`s (a carrier with one message per step) under the rules of
+  the encoded form; `apply_at` takes the step's index, refuses one ahead (`Ahead`), and answers a resend of one of
+  the last `RESEND_WINDOW` steps that is the same step and whose chunk still has its hash with `Applied::Repeat`,
+  without a flash operation. `Applier::is_plan` tells the same session by its header bytes. (APPLY-2)
+- `manifest::slot_digest` / `read_slot_digest`: SHA-256/64 over the manifest header and one slot's entries, and
+  `Manifest::active_digest`, `dfu_digest`, `Release::manifest_digest` on the server, the same value. (NET-1)
+- `BootBackend::unstage`: withdraw a staged image before the switch starts (swap: "boot" over "swap"; bank: the
+  application closes the open record while no target is set). (NET-1)
+- `chunky_ww`: the device side of `ww_dfu` (UpdateNode, BootControl, Inventory, Stage) on the apply engine and a
+  boot backend, no_std: WRITE pieces put together into one chunk, resends within `in_flight` answered and skipped,
+  a finish answered again, resume by header, `Error::Custom(CUSTOM_NOT_BLANK)` for a destination that is not
+  blank, `NodeInfo` from the running image verified at start (product id, seal, version, the floor as
+  `max(floor, running counter)` once confirmed). (NET-1)
+- `chunky_sim`: `Device::node` (the application's `ww_dfu` node on the simulated flash), `run_update_by` with a
+  `Client` (the stream apply, or `chunky_ww` over a link that loses requests and replies), `tests/ww.rs` on the
+  STM32H725IG layout (lost replies at `in_flight` 1 to 8, a cut at every flash operation, every error path, the
+  bank backend, cuts in a withdrawal) and hostile `ww_dfu` call sequences in `fuzz.rs`. (NET-1, SIM-3)
+- `just check-fw` builds `chunky_ww` for Cortex-M7 (unsigned, H7) and Cortex-M0+ (signed, G0). (NET-1)
+
+### Fixed
+
+- `SwapUpdater::confirm` writes only on the trial image: on a confirmed image it erased and rewrote STATE, on a
+  staged one it withdrew the update. (BOOT-1)
 
 ## [0.11.1] - 2026-10-16
 

@@ -1,7 +1,7 @@
 //! Reading a device manifest. Untrusted input: lengths and tags are checked, nothing is assumed.
 
 use chunky::geometry::FlashGeometry;
-use chunky::manifest::{ChunkState, HEADER_LEN, ManifestHeader, manifest_header};
+use chunky::manifest::{ChunkState, HEADER_LEN, ManifestHeader, manifest_header, slot_digest};
 use chunky::{Scheme, Trust};
 use chunky_format::{ChunkEntry, FormatError};
 
@@ -100,6 +100,16 @@ impl Manifest {
             active: states,
             dfu: vec![ChunkState::Blank; chunks],
         }
+    }
+
+    /// Digest of the ACTIVE half, as the device reports it for `Slot::Active` (`chunky::manifest::slot_digest`).
+    pub fn active_digest(&self) -> [u8; 8] {
+        slot_digest(&self.header, self.active.iter().copied())
+    }
+
+    /// Digest of the DFU half, as the device reports it for `Slot::Inactive`.
+    pub fn dfu_digest(&self) -> [u8; 8] {
+        slot_digest(&self.header, self.dfu.iter().copied())
     }
 
     /// True when the device accepts images without a signature.

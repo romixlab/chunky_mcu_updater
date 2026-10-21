@@ -298,6 +298,13 @@ The manifest is **untrusted** on the server: a hint for the planner. A wrong one
 every COPY and WRITE is checked on the device. It is computed fresh from flash for every session and is the
 device's only progress record in A/B (§9).
 
+### 7.4 Slot digest
+
+The digest of one slot's manifest is the first 8 bytes of SHA-256 over the 13 header bytes (§7.1) followed by
+that slot's `chunks` entries in their wire form (§7.2). Equal digests mean the same geometry, scheme and chunk
+states, so a host that holds a manifest (or a release) with this digest need not read the slot. `ww_dfu`
+reports it as `Inventory::manifest_digest` and, once known, in `NodeInfo::manifest_digest`.
+
 ### 7.3 The planner's rules (informative for A/B)
 
 Per erase block of the slot being written: every chunk already right, no step; every wrong chunk blank (and blank
@@ -370,11 +377,12 @@ descriptor it opened) and gets the same header again continues from there and sa
 delivery) or which body byte (bulk) to go on. A different header starts a new session.
 
 - A step the receiver has already applied, sent again because its reply was lost, is acknowledged and not
-  applied a second time. This is the carrier's rule; the layer 0 order (§5.4) refuses it. chunky's engine does
-  not do this yet (APPLY-2).
-- The step in flight at a break is redone from its first byte.
+  applied a second time. This is the carrier's rule; the layer 0 order (§5.4) refuses it. A receiver recognises
+  only the last few steps (chunky: 8, at least the carrier's calls in flight), and only when the step is exactly
+  the same (op, chunks, hash) and, for a program, its chunk still has the step's hash; anything else under an
+  index already done is refused.
+- The step in flight at a break is redone from its first byte; a WRITE half received is dropped.
 - In A/B the session lives in RAM: after a reset it is gone, and §9.1 applies.
-- Resuming a session in chunky (an entry point from a verified prefix of the plan) is APPLY-2.
 
 ### 9.3 Resume after a power cut, in place
 
@@ -407,7 +415,8 @@ carrier's:
 The WireWeaver carrier is `ww_dfu` (WireWeaver STD-12): `Stage::begin` / `StageBulk::begin_bulk` take the 145
 header bytes (`MAX_HEADER_LEN` 256), `Stage::erase` / `copy` / `write` carry the fields of one step with its index,
 `StageBulk` carries the body as `PlanSegment { offset, data }` on a credit sink, and `Inventory` returns the
-manifest.
+manifest. Refusals map onto `ww_dfu::Error`; one has no variant there and is `Error::Custom(1)`: the chunk a COPY
+or WRITE programs is not blank (§6.2), nothing was written, and the host reads the manifest again and plans again.
 
 ## 11. Vectors
 

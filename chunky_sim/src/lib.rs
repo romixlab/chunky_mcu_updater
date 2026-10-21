@@ -6,5 +6,5 @@
 pub mod device;
 pub mod flash;
 
-pub use device::{Backend, Bank, Device, SimSwitch, Swap, bank_layout, layout};
+pub use device::{Backend, Bank, Device, NodeError, SIM_PRODUCT, SimNode, SimSwitch, Swap, bank_layout, layout};
 pub use flash::{F1, FlashModel, G0, H7, H7Mini, Rp2350, Rule, SimError, SimFlash};

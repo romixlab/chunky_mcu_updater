@@ -441,4 +441,16 @@ where
             _ => Ok(()),
         }
     }
+
+    /// Closes the open record while the bootloader has not picked a target: it then reads as over and never
+    /// switched. A cut write leaves the flag set or not, and either is a state the bootloader knows.
+    fn unstage(&mut self) -> Result<(), UpdaterError> {
+        let view = self.log.scan().map_err(|_| UpdaterError::Flash)?;
+        match view.open() {
+            Some((index, record)) if state_of(&record) == BootState::Staged && record.target() == Target::Unset => {
+                self.log.set(index, Flag::Closed).map_err(|_| UpdaterError::Flash)
+            }
+            _ => Ok(()),
+        }
+    }
 }

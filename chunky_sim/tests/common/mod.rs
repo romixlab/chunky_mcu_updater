@@ -6,6 +6,8 @@ use chunky::{BootState, ImageDescriptor};
 use chunky_server::{ImageMeta, Manifest, MemStore, Policy, Release, Signer, build_image, plan};
 use chunky_sim::{Backend, Device, FlashModel, Swap};
 
+pub mod ww;
+
 pub const PRODUCT: u32 = 0x434B_5931;
 
 pub fn signer() -> Signer {
@@ -144,6 +146,51 @@ pub fn run_update<M: FlashModel, B: Backend<M>>(
     app: App,
     cuts: &[(u64, u64)],
 ) -> Seen {
+    run_update_by(device, world, app, cuts, &mut Direct)
+}
+
+/// How the application of [`run_update_by`] talks to its server.
+pub trait Client<M: FlashModel, B: Backend<M>> {
+    /// The image on trial confirms. False when that failed (power was cut).
+    fn confirm(&mut self, device: &Device<M, B>) -> bool;
+
+    /// One update session to the new release: the image ends staged, or the device fails (power was cut).
+    /// Returns the bytes on the wire, `None` when it failed.
+    fn session(&mut self, device: &Device<M, B>, world: &World) -> Option<usize>;
+}
+
+/// The application hashes, the server plans, the application applies the plan as one stream.
+pub struct Direct;
+
+impl<M: FlashModel, B: Backend<M>> Client<M, B> for Direct {
+    fn confirm(&mut self, device: &Device<M, B>) -> bool {
+        device.confirm().is_ok()
+    }
+
+    fn session(&mut self, device: &Device<M, B>, world: &World) -> Option<usize> {
+        let manifest = device.manifest().ok()?;
+        let plan = world.plan_for(&manifest, &world.new_release);
+        match device.apply(&plan.encode()) {
+            Ok(_) => Some(plan.stats.wire_bytes),
+            Err(error) => {
+                assert!(
+                    device.flash.borrow().is_dead(),
+                    "the plan failed without a power cut: {error:?}"
+                );
+                None
+            }
+        }
+    }
+}
+
+/// [`run_update`] with the application talking to its server through `client`.
+pub fn run_update_by<M: FlashModel, B: Backend<M>>(
+    device: &Device<M, B>,
+    world: &World,
+    app: App,
+    cuts: &[(u64, u64)],
+    client: &mut impl Client<M, B>,
+) -> Seen {
     let mut cuts = cuts.iter();
     let mut seen = Seen::default();
     let mut last_floor = 0;
@@ -194,7 +241,7 @@ pub fn run_update<M: FlashModel, B: Backend<M>>(
             match app {
                 App::Bad => continue,
                 App::Good => {
-                    if device.confirm().is_err() {
+                    if !client.confirm(device) {
                         assert!(dead(), "confirm failed without a power cut");
                         continue;
                     }
@@ -211,17 +258,9 @@ pub fn run_update<M: FlashModel, B: Backend<M>>(
         }
 
         seen.sessions += 1;
-        let manifest = match device.manifest() {
-            Ok(manifest) => manifest,
-            Err(_) => {
-                assert!(dead(), "hashing failed without a power cut");
-                continue;
-            }
-        };
-        let plan = world.plan_for(&manifest, &world.new_release);
-        seen.wire_bytes += plan.stats.wire_bytes;
-        if let Err(error) = device.apply(&plan.encode()) {
-            assert!(dead(), "the plan failed without a power cut: {error:?}");
+        match client.session(device, world) {
+            Some(bytes) => seen.wire_bytes += bytes,
+            None => assert!(dead(), "the session failed without a power cut"),
         }
     }
 

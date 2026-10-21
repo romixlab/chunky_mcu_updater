@@ -5,3 +5,6 @@
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
 cc 5653e3fcafe620bfd76c2fb32bcd1d5ac226b6332817d1676bb4654196e9bfab # shrinks to body = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], magic = false
+cc 80a4211675e59a8a0a3fed2bff4fb1fc30ba542bdb1467acd11a719479db9bb2 # shrinks to sequence = [Confirm], cut = Some((1, 37363291053))
+cc 55c9d3e8e7dd014090e0d9e217634722b64188901431639b6a79a5b7e24e944f # shrinks to sequence = [Begin(Real), Honest(27), Honest(20), Honest(14), Honest(32), Honest(10), Finish, Revert], cut = None
+cc 92ebf35df4e4f37706c9771ae6a9abc648d0792b28c39d3d4b0125f7f82631a2 # shrinks to sequence = [Begin(Real), Honest(31), Honest(38), Honest(34), Finish], cut = Some((100, 1720003382774364171))

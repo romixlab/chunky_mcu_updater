@@ -10,7 +10,7 @@
 //! | 2 | to swapped | bootloader | the switch goes to "swap bit set" |
 //! | 3 | tried | bootloader | the new image has had its trial boot |
 //! | 4 | confirmed | application | the new image works: keep it |
-//! | 5 | closed | bootloader | the update is over without a confirmation: refused or reverted |
+//! | 5 | closed | bootloader, application | the update is over without a confirmation: refused or reverted, or withdrawn by the application before the switch started |
 //!
 //! A flag is one write unit, blank until it is set by writing zeros, once. It reads as set when more than half
 //! of its bits are zero, so a single flipped bit sets nothing, and a unit that faults on ECC reads as zeros

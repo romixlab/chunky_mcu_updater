@@ -121,7 +121,7 @@ have been written to zero (`chunky/src/floor.rs`). It only goes up, one write un
 | Region | Bootloader | Application | A plan |
 |---|---|---|---|
 | Bootloader and public key | never (write-protected at provisioning) | never | never |
-| STATE | swap progress, revert | "staged" and "confirmed" only, through `SwapUpdater` | never |
+| STATE | swap progress, revert | "staged", "confirmed" (on the trial image only) and "withdrawn" (a staged image before the switch starts), through `SwapUpdater` or `BankUpdater` | never |
 | FLOOR | raise | read | never |
 | ACTIVE | swap and revert | read; it is handed over as `ReadOnly`, a type without a write | read (COPY sources) |
 | DFU, image part | swap and revert | the apply engine | ERASE, COPY, WRITE |
@@ -156,6 +156,40 @@ as strong as the chip's protection (next section).
 
 What a hostile plan can still do: make the device erase and rewrite DFU (wear, airtime, time) and then fail.
 SEC-5 bounds that with a retry budget.
+
+## The WireWeaver input path
+
+`chunky_ww` serves `ww_dfu` (`UpdateNode`, `BootControl`, `Inventory`, `Stage`) on the engine above. Every call
+comes from a host that may be broken or hostile, over a link that loses requests and replies. What it adds to
+the plan rules, and what it does not change:
+
+- **The same engine, the same rules.** The header goes to `Applier::begin` byte for byte. The steps arrive as
+  typed calls and reach the engine as `StepOp`s (`Applier::apply_at`), which count against the header's step
+  count and body length exactly as their encoded bytes would; ranges, order, blank-only programming, hashes and
+  the read-back are the engine's, not the carrier's.
+- **Pieces.** A WRITE comes in pieces of at most `max_piece` bytes into one chunk buffer. A piece is bounded
+  before it is copied (length against `max_piece`, offset and length against the chunk, `dst` against the
+  geometry), must continue exactly where the chunk stands, and must name the same `dst` and hash as the pieces
+  before it. Nothing is written until the chunk is complete, its hash checked by the engine.
+- **Resends.** A call for a step already run is answered `Ok` only when it is one of the last `RESEND_WINDOW`
+  steps, it is exactly that step (op, chunks, hash) and, for a program, the chunk in DFU still has that hash; a
+  resent piece only when its bytes are the ones in the chunk (or in DFU). No resend makes a flash operation.
+  Anything else under an old index is `StepMismatch`, a later index `OutOfOrder` with the step expected.
+- **Sessions.** One at a time, in RAM. The same header byte for byte resumes it; any other header while it is
+  open is `Busy`. A reset ends it, and the flash stays the only progress record.
+- **The floor.** `begin` checks the image against `max(floor, counter of the running image)` once the running
+  image is confirmed, so a host cannot use the time between a confirm and the next reset, when the bootloader
+  has not yet raised the floor, to stage an older release through this node (the bootloader side of that window
+  is P2625#21oct-1148).
+- **Boot state.** `confirm` writes only on the trial image; `revert` on the trial image only refuses later
+  confirms (the next reset reverts), on a staged one it withdraws it before the switch starts.
+- **Garbage.** Hostile call sequences, with power cut anywhere in them, are fuzzed
+  (`chunky_sim/tests/fuzz.rs`, `ww_calls_from_a_hostile_host`): nothing panics, nothing outside DFU's image part
+  changes except STATE by a finish or a withdrawal, and an honest update settles afterwards.
+
+What a hostile host can still do here: what a hostile plan can (erase and rewrite DFU, then fail), withdraw a
+staged update (`revert`), keep the trial image from being confirmed over the link (the application's own
+self-test confirms it anyway), and read the manifest. `BootControl::reboot` is the firmware's, outside this crate.
 
 ## What each attacker can do
 
@@ -232,6 +266,14 @@ Flash saved by leaving the verifier out, per family: to be measured (SEC-8).
   (`prepare_boot` does not check first; `set_magic` does). Zeros over zeros are
   harmless; on H7 zeros over a torn word may leave it faulting. All state reads go through `Masked`, so it reads
   as zero either way. To be confirmed on hardware (ECC-2).
+- **A confirm outside the trial rewrote STATE.** `SwapUpdater::confirm` called embassy-boot's `mark_booted` in
+  every state: on a confirmed image it erased and rewrote STATE for nothing (wear, and a cut there tears it), on a
+  staged one it silently withdrew the update. Found by the `ww_dfu` fuzzing (a host may call confirm any time).
+  It now writes only on the trial image.
+- **A cut while a staged image is withdrawn can report "reverted".** embassy-boot writes its "progress
+  invalid" word before "boot"; cut there, the bootloader takes it for a swap begun and runs a revert of one that
+  never moved a page. ACTIVE stays the old release and verifies (swept on both backends, every cut); only the
+  report says "reverted" where "confirmed" was meant.
 - **A reverted update can read as "confirmed" rather than "reverted"** when power is lost at the very end of
   the revert. The image and the floor are right; only the report is lost. The application compares the running
   version with the one it staged (SEC-5).

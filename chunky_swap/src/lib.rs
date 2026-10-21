@@ -269,7 +269,21 @@ where
         self.state.mark_updated().map_err(|_| BootFault)
     }
 
+    /// Writes "boot" on the trial image only: anywhere else it would rewrite the state partition for nothing
+    /// (wear, and a cut there tears it), or withdraw a staged image.
     fn confirm(&mut self) -> Result<(), BootFault> {
-        self.state.mark_booted().map_err(|_| BootFault)
+        if self.boot_state()? == BootState::Trial {
+            self.state.mark_booted().map_err(|_| BootFault)?;
+        }
+        Ok(())
+    }
+
+    /// Writes "boot" over "swap" while no page has moved yet: what the bootloader does with a staged image that
+    /// does not verify.
+    fn unstage(&mut self) -> Result<(), BootFault> {
+        if self.boot_state()? == BootState::Staged {
+            self.state.mark_booted().map_err(|_| BootFault)?;
+        }
+        Ok(())
     }
 }

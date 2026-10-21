@@ -605,3 +605,167 @@ proptest! {
         run_update(&device, &world, App::Good, &[]);
     }
 }
+
+/// One `ww_dfu` call from a hostile or broken host.
+#[derive(Clone, Debug)]
+enum WwCall {
+    /// `begin` with the real header, the real header with one byte changed, or any bytes.
+    Begin(HeaderKind),
+    Erase(u32, u16),
+    Copy(u32, u16, u16, [u8; 8]),
+    Write(u32, u16, [u8; 8], u32, Vec<u8>),
+    /// The next calls of the honest plan, as far as the node has it: sessions get far, and finish.
+    Honest(u8),
+    Progress,
+    Finish,
+    Abort,
+    Confirm,
+    Revert,
+    Chunks(bool, u16, u16),
+    Digest(bool),
+}
+
+#[derive(Clone, Debug)]
+enum HeaderKind {
+    Real,
+    Flipped(usize, u8),
+    Any(Vec<u8>),
+}
+
+fn index() -> impl Strategy<Value = u32> {
+    prop_oneof![4 => 0u32..24, 1 => any::<u32>()]
+}
+
+fn chunk_no() -> impl Strategy<Value = u16> {
+    prop_oneof![4 => 0u16..140, 1 => any::<u16>()]
+}
+
+fn ww_call() -> impl Strategy<Value = WwCall> {
+    prop_oneof![
+        2 => prop_oneof![
+            Just(HeaderKind::Real),
+            (0..PLAN_HEADER_LEN, 1..=255u8).prop_map(|(at, x)| HeaderKind::Flipped(at, x)),
+            prop::collection::vec(any::<u8>(), 0..300).prop_map(HeaderKind::Any),
+        ]
+        .prop_map(WwCall::Begin),
+        2 => (index(), prop_oneof![0u16..4, any::<u16>()]).prop_map(|(i, b)| WwCall::Erase(i, b)),
+        2 => (index(), chunk_no(), chunk_no(), any::<[u8; 8]>()).prop_map(|(i, d, s, h)| WwCall::Copy(i, d, s, h)),
+        3 => (
+            index(),
+            chunk_no(),
+            any::<[u8; 8]>(),
+            prop_oneof![(0u32..4).prop_map(|k| k * 512), any::<u32>()],
+            prop::collection::vec(any::<u8>(), 0..1100),
+        )
+            .prop_map(|(i, d, h, o, data)| WwCall::Write(i, d, h, o, data)),
+        12 => (1u8..40).prop_map(WwCall::Honest),
+        1 => Just(WwCall::Progress),
+        1 => Just(WwCall::Finish),
+        1 => Just(WwCall::Abort),
+        1 => Just(WwCall::Confirm),
+        1 => Just(WwCall::Revert),
+        1 => (any::<bool>(), chunk_no(), any::<u16>()).prop_map(|(a, f, c)| WwCall::Chunks(a, f, c)),
+        1 => any::<bool>().prop_map(WwCall::Digest),
+    ]
+}
+
+proptest! {
+    #![proptest_config(cases(32))]
+
+    /// Any sequence of `ww_dfu` calls into `chunky_ww` on the B135 layout, a power cut somewhere in it maybe:
+    /// nothing panics, nothing outside DFU's image part changes, the device boots a verified release, and an
+    /// honest update over `ww_dfu` then settles.
+    #[test]
+    fn ww_calls_from_a_hostile_host(
+        sequence in prop::collection::vec(ww_call(), 1..120),
+        cut in prop::option::of((0u64..200, any::<u64>())),
+    ) {
+        use chunky_ww::ww_dfu::{ChunkState, Slot, Target};
+        use common::ww::{Link, OverWw, calls, limits, read_manifest};
+
+        let world = World::with_geometry(chunky::chips::STM32H725IG, signer());
+        let device = world.device::<chunky_sim::H7>();
+        device.boot().unwrap();
+        let geometry = world.geometry;
+        let spare = chunky::Region {
+            offset: geometry.dfu.offset + geometry.active.len,
+            len: geometry.dfu.len - geometry.active.len,
+        };
+        let kept = [geometry.state, geometry.floor, geometry.active, spare];
+        let before: Vec<Vec<u8>> = kept.iter().map(|r| device.dump(*r)).collect();
+        let mut staged = false;
+        // A finish (and a revert of what it staged) may write STATE, and only they may.
+        let mut state_written = false;
+        {
+            let mut word = [0; 32];
+            let mut buf = vec![0; 2 * geometry.chunk as usize];
+            let mut node = device.node(limits(1024, 4), &mut word, &mut buf).unwrap();
+            let manifest = read_manifest::<chunky_sim::H7, Swap>(&mut node, &world, &mut Link::perfect()).unwrap();
+            let honest = chunky_server::plan(
+                &geometry, &manifest, &world.new_release, &world.store, &chunky_server::Policy::default(),
+            ).unwrap();
+            let header = honest.encode()[..PLAN_HEADER_LEN].to_vec();
+            let honest = calls(&honest, 1024);
+            let first_of = |step: u32| honest.iter().position(|c| c.index() == step).unwrap_or(0);
+            let mut cursor = 0;
+            if let Some((after, seed)) = cut {
+                device.flash.borrow_mut().cut_after(after, seed);
+            }
+            let mut page = [ChunkState::Blank; 64];
+            let slot = |active: bool| if active { Slot::Active } else { Slot::Inactive };
+            for call in &sequence {
+                match call {
+                    WwCall::Begin(kind) => {
+                        let bytes = match kind {
+                            HeaderKind::Real => header.clone(),
+                            HeaderKind::Flipped(at, x) => {
+                                let mut h = header.clone();
+                                h[*at] ^= x;
+                                h
+                            }
+                            HeaderKind::Any(bytes) => bytes.clone(),
+                        };
+                        let _ = node.begin(Target::Live, &bytes);
+                    }
+                    WwCall::Erase(i, b) => { let _ = node.erase(*i, *b); }
+                    WwCall::Copy(i, d, s, h) => { let _ = node.copy(*i, *d, *s, *h); }
+                    WwCall::Write(i, d, h, o, data) => { let _ = node.write(*i, *d, *h, *o, data); }
+                    WwCall::Honest(n) => {
+                        for _ in 0..*n {
+                            cursor = match honest[cursor % honest.len()].send::<chunky_sim::H7, Swap>(&mut node) {
+                                Err(chunky_ww::ww_dfu::Error::OutOfOrder(step)) => first_of(step),
+                                _ => cursor + 1,
+                            };
+                        }
+                    }
+                    WwCall::Progress => { let _ = node.progress(); }
+                    WwCall::Finish => {
+                        // Even a finish that fails may have begun to write (a cut in it).
+                        staged |= node.finish().is_ok();
+                        state_written = true;
+                    }
+                    WwCall::Abort => node.abort(),
+                    WwCall::Confirm => { let _ = node.confirm(); }
+                    WwCall::Revert => staged &= node.revert().is_err(),
+                    WwCall::Chunks(a, f, c) => { let _ = node.chunks(slot(*a), *f, *c, &mut page); }
+                    WwCall::Digest(a) => { let _ = node.manifest_digest(slot(*a)); }
+                }
+                let _ = node.node();
+            }
+        }
+        device.flash.borrow_mut().disarm();
+        device.flash.borrow_mut().power_on();
+        for (region, was) in kept.iter().zip(&before) {
+            if *region != geometry.state || !state_written {
+                prop_assert!(device.dump(*region) == *was, "a region outside DFU's image changed: {region:?}");
+            }
+        }
+        if staged {
+            let image = chunky::Region { offset: geometry.dfu.offset, len: geometry.active.len };
+            prop_assert!(device.dump(image) == world.new, "staged, but DFU does not hold the release");
+        }
+        // Whatever the calls left behind, the device boots a release and an honest update settles.
+        let mut client = OverWw::new(Link::new(7, 50), limits(1024, 4));
+        common::run_update_by(&device, &world, App::Good, &[], &mut client);
+    }
+}
