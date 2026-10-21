@@ -195,7 +195,8 @@ Design: [SECURITY.md](SECURITY.md).
   `reboot_into_trial` (a `Reconnect` finds the device again), `wait_confirmed` (Confirmed or Reverted),
   `flash` for all of it, `seal_for_node` (product and seal scheme from NodeInfo). Timeouts from the layout:
   an ERASE step covers the slowest erase of one block (`max_erase_time`: STM32H7 4 s per 128 KB sector,
-  DS13313), the reboot the swap. End-to-end tests over `in_process` USB HS on the simulated B135
+  DS13313), the boot state calls a confirm's STATE erase (B135 confirms on the first request after the reboot),
+  the reboot the swap. End-to-end tests over `in_process` USB HS on the simulated B135
   (`tests/e2e.rs`). The CLI is wire_weaver's `ww dfu flash/status/confirm/revert` (CLT-33). Open: the version
   from the ELF (ww_firmware_info's summary is not in the ELF as data), the known-ACTIVE digest shortcut
   unused by `stage`, measuring on the B135 (erase stall, swap time).
