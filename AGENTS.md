@@ -59,6 +59,9 @@ adding a dependency.
   `SwapUpdater` the application's handle, `Guarded` the state partition as embassy-boot gets it.
 - `chunky_bank/` — the hardware bank swap backend, `no_std`: `boot()` again the whole decision, `BankUpdater`
   the application's handle, `BankSwitch` the SWAP_BANK option bit, `log.rs` the state log of write-once flags.
+- `chunky_ww/` — the device side of WireWeaver `ww_dfu`, `no_std`: `ChunkyNode` answers UpdateNode, BootControl,
+  Inventory and Stage on `Applier` and a `BootBackend`, puts WRITE pieces together, answers resends (APPLY-2).
+  Needs `../wire_weaver` (`ww_dfu`, `wire_weaver`); tested in `chunky_sim/tests/ww.rs` on `chips::STM32H725IG`.
 - `chunky_format/` — the wire format as fixed-layout and head+tail shrink_wrap types (format 2, PROTO-3:
   descriptor, plan header, steps, manifest), what `chunky` reads and `chunky_server` writes: `signed!`, golden
   `vectors/` (made by `chunky_server::vectors`, `just vectors`), the generated C reader in `c/`, `size_bench/`

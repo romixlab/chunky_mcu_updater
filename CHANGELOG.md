@@ -18,7 +18,20 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - `BootBackend::unstage`: withdraw a staged image before the switch starts (swap: "boot" over "swap"; bank: the
   application closes the open record while no target is set). (NET-1)
 - `chunky_ww`: the device side of `ww_dfu` (UpdateNode, BootControl, Inventory, Stage) on the apply engine and a
-  boot backend, no_std. (NET-1)
+  boot backend, no_std: WRITE pieces put together into one chunk, resends within `in_flight` answered and skipped,
+  a finish answered again, resume by header, `Error::Custom(CUSTOM_NOT_BLANK)` for a destination that is not
+  blank, `NodeInfo` from the running image verified at start (product id, seal, version, the floor as
+  `max(floor, running counter)` once confirmed). (NET-1)
+- `chunky_sim`: `Device::node` (the application's `ww_dfu` node on the simulated flash), `run_update_by` with a
+  `Client` (the stream apply, or `chunky_ww` over a link that loses requests and replies), `tests/ww.rs` on the
+  STM32H725IG layout (lost replies at `in_flight` 1 to 8, a cut at every flash operation, every error path, the
+  bank backend, cuts in a withdrawal) and hostile `ww_dfu` call sequences in `fuzz.rs`. (NET-1, SIM-3)
+- `just check-fw` builds `chunky_ww` for Cortex-M7 (unsigned, H7) and Cortex-M0+ (signed, G0). (NET-1)
+
+### Fixed
+
+- `SwapUpdater::confirm` writes only on the trial image: on a confirmed image it erased and rewrote STATE, on a
+  staged one it withdrew the update. (BOOT-1)
 
 ## [0.11.1] - 2026-10-16
 

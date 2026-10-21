@@ -32,7 +32,7 @@ lint:
     just bench-lint
     cd chunky_format/size_bench && cargo fmt --check
 
-# The no_std crates build for Cortex-M0+ and M4F, signed and unsigned, with a series-* feature or chip-custom
+# The no_std crates build for Cortex-M0+ and M4F/M7, signed and unsigned, with a series-* feature or chip-custom
 check-fw:
     cargo check -q -p chunky_swap --target thumbv6m-none-eabi --features ed25519,chunky/series-stm32g0
     cargo check -q -p chunky_swap --target thumbv6m-none-eabi --features unsigned,chunky/chip-custom
@@ -42,6 +42,8 @@ check-fw:
     cargo check -q -p chunky_bank --target thumbv7em-none-eabihf --features ed25519,chunky/series-stm32h7
     cargo check -q -p chunky_bank --target thumbv7em-none-eabihf --features unsigned,chunky/series-stm32h7
     cargo check -q -p chunky_format --target thumbv6m-none-eabi
+    cargo check -q -p chunky_ww --target thumbv7em-none-eabihf --features unsigned,chunky/series-stm32h7
+    cargo check -q -p chunky_ww --target thumbv6m-none-eabi --features ed25519,chunky/series-stm32g0
 
 # Power-cut bench firmware (HW-3): both bootloaders and apps A and B, raw images and ELFs in bench/fw/out
 bench-fw:

@@ -71,6 +71,7 @@ trusts a key never accepts an unsigned image.
 | `chunky` | `no_std` core: geometry, manifest, plan format, apply engine, descriptor, version floor, ECC-tolerant reads |
 | `chunky_swap` | `no_std` embassy-boot backend: the bootloader's decision and the application's handle |
 | `chunky_bank` | `no_std` hardware bank swap backend (dual-bank STM32): the same two things over a SWAP_BANK option bit |
+| `chunky_ww` | `no_std` device side of WireWeaver `ww_dfu`: UpdateNode, BootControl, Inventory and Stage on the apply engine and a boot backend, for the firmware's handlers to forward to |
 | `chunky_server` | Image builder and sealer, content-addressed blob store, planner |
 | `chunky_cli` | The `chunky` command: keygen, image build, manifest, plan, store (a thin layer over `chunky_server`) |
 | `chunky_sim` | Flash simulator (F1, G0, H7, RP2350 write rules, torn writes, ECC faults) and a simulated device |

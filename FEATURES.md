@@ -64,14 +64,14 @@ IDs are stable: never renumbered, never reused. New ids come from `tpm work clai
   a slice of the step, no copy), each `step` call takes exactly one encoded step, a WRITE exactly one chunk, the
   header's step count and body length are bounded by the geometry and must be met exactly; `step_len` frames a
   step from its head for a receiver of a stream and refuses a WRITE count that is not one chunk before the data.
-- 📋 **APPLY-2 apply-resume** — what ww_dfu (STD-12) promises and the engine does not do yet: a step resent after a
-  lost reply is accepted and skipped, and `Stage::begin` with the same header resumes a session. Today `Applier`
-  refuses a resent step (`OutOfOrder`) and a programmed chunk (`NotBlank`), and has no resume entry point. Way
-  without a journal: an exact repeat of the last step whose chunk reads back right is answered "done" (no
-  flash operation); a resume after a reset is a new manifest and a new plan (the planner already makes only
-  what is left), or a resume entry point that re-derives position and body offset from a verified prefix of the
-  plan, never from what the carrier says. After a cut inside a block, restart at the ERASE of that block (a torn
-  chunk is neither blank nor right). Needed by NET-1 (P2625#15oct-0943).
+- ✅ **APPLY-2 apply-resume** — what ww_dfu (STD-12) promises, without a journal: `Applier::apply` takes a step as
+  a typed `StepOp` (a carrier with one message per step) under the rules and the body accounting of the encoded
+  form; `Applier::apply_at` takes its index, refuses one ahead (`Ahead { expected }`), and answers a resend of one
+  of the last `RESEND_WINDOW` (8) steps that is the same step (op, chunks, hash) and whose chunk still reads back
+  with its hash with `Applied::Repeat`, no flash operation; anything else under an old index is `NotSameStep`.
+  `Applier::is_plan` tells the same session by its 145 header bytes (SPEC §9.2); the session lives in RAM, and
+  after a reset the device hashes again and the planner sends what is left (§9.1). Tested through `chunky_ww`
+  (`chunky_sim/tests/ww.rs`). Not done: in place, the restart at the ERASE of the block in flight (BOOT-6).
 
 ## ECC — torn words on ECC flash
 
@@ -106,8 +106,8 @@ Design: [SECURITY.md](SECURITY.md).
 - 📋 **SEC-7 security-pass** — the pass on the top model over everything above. The prototype was built on Opus.
 - 🚧 **SEC-8 unsigned-build-option** — `ed25519` / `unsigned` features without a default, scheme inside the sealed
   descriptor, signed devices refuse unsigned images, manifest carries the scheme, planner warns and refuses a
-  mismatch. Open: flash saved per family (measure), the HELLO field (NET-1), the CLI warning (CLI-1), whether
-  CRC32 instead of the image SHA-256 saves anything.
+  mismatch; on `ww_dfu` the node says its scheme in `NodeInfo::seal` (NET-1). Open: flash saved per family
+  (measure), the CLI warning (CLI-1), whether CRC32 instead of the image SHA-256 saves anything.
 
 ## SIM — simulator
 
@@ -147,7 +147,9 @@ Design: [SECURITY.md](SECURITY.md).
 
 - ✅ **BOOT-1 swap-backend** — embassy-boot, unmodified: staged image verified before the swap, ACTIVE verified on
   every boot, one trial boot, revert, floor raised at confirm; ECC faults masked; state erases guarded. Driven end
-  to end in the simulator.
+  to end in the simulator. `confirm` writes only on the trial image (it used to rewrite STATE in any state, and
+  withdraw a staged image: found by the ww_dfu fuzzing, NET-1); `unstage` withdraws a staged image before the
+  swap starts (both backends; a cut in it on the swap backend can report "reverted", SECURITY.md findings).
 - ✅ **BOOT-5 embassy-torn-erase-repro** — stand-alone reproduction of the embassy-boot torn state-erase bug
   (`embassy_torn/`, report in `embassy_torn/REPORT.md`): stock 0.7.0 and git master both lose the images, the
   zero-the-magic-first guard survives every tear. Open: send it upstream.
@@ -183,8 +185,18 @@ Design: [SECURITY.md](SECURITY.md).
 
 ## NET — transport
 
-- 📋 **NET-1 wire-weaver-transport** — the update API over WireWeaver (RTT first), no COM ports: implement
-  WireWeaver `ww_dfu` (STD-12: UpdateNode, BootControl, Inventory, Stage, StageBulk) on the chunky core.
+- 🚧 **NET-1 wire-weaver-transport** — the update API over WireWeaver, no COM ports: WireWeaver `ww_dfu` (STD-12)
+  on the chunky core. Device side done for scenario `2C-APP-STEP`: `chunky_ww` (no_std, no embassy, no board)
+  serves UpdateNode, BootControl (all but `reboot`, the firmware's), Inventory and Stage on `Applier` and any
+  `BootBackend`; the firmware's handlers forward. WRITE pieces put together into one chunk, resends within
+  `in_flight` (up to `RESEND_WINDOW`) answered and skipped (APPLY-2), a finish answered again, resume by header,
+  `Busy` for another plan; `ApplyError` mapped onto `ww_dfu::Error` (`Custom(1)` = `CUSTOM_NOT_BLANK`, the host
+  plans again); `NodeInfo` with product id and seal from the running image (verified at start) and the floor as
+  `max(floor, running counter)` once confirmed; slot manifest digest = `chunky::manifest::slot_digest`, the same
+  as `Release::manifest_digest` on the server. Tested on the STM32H725IG layout (`chips::STM32H725IG`, B135):
+  whole updates with lost requests and replies at `in_flight` 1 to 8, a power cut at every flash operation, the
+  error paths one by one, hostile call sequences (`fuzz.rs`), the bank backend. Open: StageBulk and the `event`
+  stream; the host driver and the CLI (NET-2); on hardware with B135 (vb135 BOOT-2).
 
 ## PROTO — shared protocol spec
 
