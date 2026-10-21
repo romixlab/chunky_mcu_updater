@@ -31,6 +31,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
   bank backend, cuts in a withdrawal) and hostile `ww_dfu` call sequences in `fuzz.rs`. (NET-1, SIM-3)
 - `just check-fw` builds `chunky_ww` for Cortex-M7 (unsigned, H7) and Cortex-M0+ (signed, G0). (NET-1)
 
+- `chunky_ww_host` example `usb_flash`: updates a `chunky_ww` device on USB with a sealed image (found by serial
+  number or product string, found again by serial number after each reset), until `ww dfu flash` does it; vb135's
+  `just update` uses it. (NET-2)
+
 ### Fixed
 
 - `SwapUpdater::confirm` writes only on the trial image: on a confirmed image it erased and rewrote STATE, on a

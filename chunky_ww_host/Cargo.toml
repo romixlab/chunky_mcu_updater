@@ -16,3 +16,6 @@ tracing = "0.1"
 wire_weaver = { path = "../../wire_weaver/wire_weaver" }
 wire_weaver_client = { path = "../../wire_weaver/wire_weaver_client" }
 ww_dfu = { path = "../../wire_weaver/ww_stdlib/ww_dfu" }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["time", "rt-multi-thread", "macros"] }
