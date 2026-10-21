@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.2] - 2026-10-21
+
 ### Added
 
 - `chips::STM32H725IG`: the STM32H72x 1 MB embassy-boot swap layout (128 KB bootloader, a sector each for STATE
@@ -30,7 +32,6 @@ and the project uses [Semantic Versioning](https://semver.org/).
   STM32H725IG layout (lost replies at `in_flight` 1 to 8, a cut at every flash operation, every error path, the
   bank backend, cuts in a withdrawal) and hostile `ww_dfu` call sequences in `fuzz.rs`. (NET-1, SIM-3)
 - `just check-fw` builds `chunky_ww` for Cortex-M7 (unsigned, H7) and Cortex-M0+ (signed, G0). (NET-1)
-
 - `chunky_ww_host`: updates a `chunky_ww` device over WireWeaver: node, manifest, plan, pipelined steps with
   timeouts from the layout (an STM32H7 sector erase up to 4 s), re-planning when the node finds DFU changed
   (`CUSTOM_NOT_BLANK`), reboot into the trial, the device's confirm or revert; progress events. `ww dfu flash`
