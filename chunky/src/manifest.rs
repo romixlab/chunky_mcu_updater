@@ -10,11 +10,12 @@
 
 use chunky_format::{ChunkEntry, FORMAT, MANIFEST_MAGIC};
 use embedded_storage::nor_flash::ReadNorFlash;
+use sha2::{Digest, Sha256};
 
 use crate::descriptor::{Scheme, Trust};
 use crate::ecc::{EccError, ReadFault, try_read};
 use crate::geometry::FlashGeometry;
-use crate::hash::{ChunkHash, is_blank};
+use crate::hash::{ChunkHash, HASH_LEN, is_blank};
 
 pub use chunky_format::ManifestHeader;
 
@@ -138,4 +139,52 @@ where
         sink(&entry[..len]);
     }
     Ok(())
+}
+
+/// Digest of one slot's manifest: SHA-256 over the manifest header and the slot's entries in their wire form,
+/// truncated to its first 8 bytes. Equal digests mean the same geometry, scheme and chunks, so a host that holds
+/// a manifest with this digest need not read the slot (`ww_dfu` `Inventory::manifest_digest`).
+pub fn slot_digest(header: &ManifestHeader, states: impl IntoIterator<Item = ChunkState>) -> [u8; HASH_LEN] {
+    let mut sha = Sha256::new();
+    let mut bytes = [0; HEADER_LEN];
+    header.to_fixed(&mut bytes).expect("the buffer is the header's length");
+    sha.update(bytes);
+    let mut entry = [0; MAX_ENTRY_LEN];
+    for state in states {
+        let len = state.encode(&mut entry);
+        sha.update(&entry[..len]);
+    }
+    let full = sha.finalize();
+    let mut out = [0; HASH_LEN];
+    out.copy_from_slice(&full[..HASH_LEN]);
+    out
+}
+
+/// [`slot_digest`] of a slot as it is in `flash` (ACTIVE, or the image-sized part of DFU). `buf` is one chunk
+/// long.
+pub fn read_slot_digest<F>(
+    geometry: &FlashGeometry,
+    scheme: Scheme,
+    flash: &mut F,
+    buf: &mut [u8],
+) -> Result<[u8; HASH_LEN], ManifestError>
+where
+    F: ReadNorFlash,
+    F::Error: EccError,
+{
+    let chunk = geometry.chunk as usize;
+    assert!(buf.len() >= chunk);
+    let buf = &mut buf[..chunk];
+    let mut failed = false;
+    let states = (0..geometry.chunks()).map_while(|index| {
+        match ChunkState::read(flash, index * geometry.chunk, buf) {
+            Ok(state) => Some(state),
+            Err(_) => {
+                failed = true;
+                None
+            }
+        }
+    });
+    let digest = slot_digest(&manifest_header(geometry, scheme), states);
+    if failed { Err(ManifestError::Flash) } else { Ok(digest) }
 }

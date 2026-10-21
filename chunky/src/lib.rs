@@ -33,7 +33,7 @@ pub mod part;
 pub mod plan;
 pub mod series;
 
-pub use apply::{Applier, ApplyError};
+pub use apply::{Applied, Applier, ApplyError, RESEND_WINDOW, StepOp};
 pub use backend::{BootBackend, BootState};
 pub use descriptor::{DESCRIPTOR_LEN, Expect, ImageDescriptor, ImageError, PublicKey, Scheme, Trust, verify_image};
 pub use ecc::{EccError, Masked, ReadFault, try_read};

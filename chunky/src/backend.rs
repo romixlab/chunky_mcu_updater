@@ -36,4 +36,8 @@ pub trait BootBackend {
 
     /// The running image works: keep it.
     fn confirm(&mut self) -> Result<(), Self::Error>;
+
+    /// Withdraws a staged image before the switch to it has started: the running image stays after the next
+    /// reset, and DFU may be written again. Does nothing in any other state.
+    fn unstage(&mut self) -> Result<(), Self::Error>;
 }

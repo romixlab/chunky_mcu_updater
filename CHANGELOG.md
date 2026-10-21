@@ -9,6 +9,16 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 - `chips::STM32H725IG`: the STM32H72x 1 MB embassy-boot swap layout (128 KB bootloader, a sector each for STATE
   and FLOOR, 256 KB ACTIVE, 384 KB DFU, 2 KB chunks), the layout of the B135 board, as preset `stm32h725ig`. (GEO-2)
+- `Applier::apply` and `apply_at`: steps as typed `StepOp`s (a carrier with one message per step) under the rules of
+  the encoded form; `apply_at` takes the step's index, refuses one ahead (`Ahead`), and answers a resend of one of
+  the last `RESEND_WINDOW` steps that is the same step and whose chunk still has its hash with `Applied::Repeat`,
+  without a flash operation. `Applier::is_plan` tells the same session by its header bytes. (APPLY-2)
+- `manifest::slot_digest` / `read_slot_digest`: SHA-256/64 over the manifest header and one slot's entries, and
+  `Manifest::active_digest`, `dfu_digest`, `Release::manifest_digest` on the server, the same value. (NET-1)
+- `BootBackend::unstage`: withdraw a staged image before the switch starts (swap: "boot" over "swap"; bank: the
+  application closes the open record while no target is set). (NET-1)
+- `chunky_ww`: the device side of `ww_dfu` (UpdateNode, BootControl, Inventory, Stage) on the apply engine and a
+  boot backend, no_std. (NET-1)
 
 ## [0.11.1] - 2026-10-16
 

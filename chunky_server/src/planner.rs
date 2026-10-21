@@ -56,6 +56,13 @@ impl Release {
         Ok(Self { descriptor, chunks })
     }
 
+    /// Digest of the slot manifest of a device running this release (`chunky::manifest::slot_digest`): when a
+    /// device reports it for its ACTIVE slot, it runs exactly this release and its manifest need not be read.
+    pub fn manifest_digest(&self, geometry: &FlashGeometry) -> [u8; 8] {
+        let header = chunky::manifest::manifest_header(geometry, self.info().scheme);
+        chunky::manifest::slot_digest(&header, self.chunks.iter().copied())
+    }
+
     /// The descriptor's fields (its seal is the device's to check).
     pub fn info(&self) -> ImageDescriptor {
         read_descriptor_unverified(&self.descriptor).expect("a release holds a descriptor that read when it was added")

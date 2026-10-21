@@ -272,4 +272,13 @@ where
     fn confirm(&mut self) -> Result<(), BootFault> {
         self.state.mark_booted().map_err(|_| BootFault)
     }
+
+    /// Writes "boot" over "swap" while no page has moved yet: what the bootloader does with a staged image that
+    /// does not verify.
+    fn unstage(&mut self) -> Result<(), BootFault> {
+        if self.boot_state()? == BootState::Staged {
+            self.state.mark_booted().map_err(|_| BootFault)?;
+        }
+        Ok(())
+    }
 }
