@@ -132,3 +132,23 @@ Why it works: after the zero write the magic word matches no state, so `read_sta
 what the tear leaves in the progress words; a torn zero write leaves either the old magic with intact progress
 (the situation before the cut) or a magic that is not exactly SWAP. The cost is one program of a non-erased
 word with zeros (the same exception embassy-boot already relies on for the validity word).
+
+## Upstream fix, checked (21 Oct 2026)
+
+Issue [embassy-rs/embassy#7235](https://github.com/embassy-rs/embassy/issues/7235) was accepted on 21 Oct 2026; the bug
+dates from embassy-rs/embassy#1327. The fix, [PR 7329](https://github.com/embassy-rs/embassy/pull/7329)
+(`153d2e80`), zeroes the magic before the STATE erase in the revert tail of `prepare_boot` always, and in
+`set_magic` when the magic read SWAP. That commit runs here as a third embassy-boot (`suite!(eb_pr7329, ebpr, true)`,
+the `true` flips the "stock corrupts" assertions). Same sweeps, no wrapper:
+
+| scenario | tear | clean old / new | MIXED | LOST | boot error |
+|---|---|---|---|---|---|
+| Revert  | words | 16384 / 0 | 0 | 0 | 0 |
+| Revert  | bits  | 3000 / 0  | 0 | 0 | 0 |
+| Confirm | words | 0 / 16384 | 0 | 0 | 0 |
+| Confirm | bits  | 0 / 3000  | 0 | 0 | 0 |
+| both    | ECC   | 13 / 0, 0 / 13 | 0 | 0 | 1 of 14 (magic word unreadable, as stock: the PR does not mask ECC) |
+
+Clean cuts and torn programs stay safe. One new kind of re-program shows up: a clean cut between the zeroed magic and
+the erase makes the next boot write word 0 with zeros again (41 such cuts on the revert path, 5 on confirm), zeros
+over zeros like the validity word before it. `ZeroMagicFirst` on top of the PR changes nothing (0 bad).

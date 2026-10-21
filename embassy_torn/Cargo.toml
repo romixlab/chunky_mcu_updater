@@ -14,3 +14,5 @@ embedded-storage.workspace = true
 eb07 = { package = "embassy-boot", version = "=0.7.0" }
 # Pinned to the master commit the report was made against (2026-10-11).
 ebmaster = { package = "embassy-boot", git = "https://github.com/embassy-rs/embassy", rev = "34191ee2badce9d4ba63ac4545dc1d8abd1495eb", features = ["ed25519-dalek"] }
+# lulf's fix for #7235 (PR 7329, 21 Oct 2026): the magic zeroed before the STATE erase.
+ebpr = { package = "embassy-boot", git = "https://github.com/embassy-rs/embassy", rev = "153d2e802e765be6193187ef3823d63f0453e932" }

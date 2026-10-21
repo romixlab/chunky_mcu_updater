@@ -5,6 +5,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- embassy_torn: embassy-boot PR 7329 (lulf's fix for #7235, the magic zeroed before the STATE erase) runs as a third
+  version under the same sweeps; `suite!` takes a flag for versions that carry the fix, which flips the "stock
+  corrupts" assertions. Result: 0 mixed, 0 lost over 16384 word tears and 3000 bit tears on both paths;
+  `REPORT.md` "Upstream fix, checked". (BOOT-5)
+
 ## [0.11.2] - 2026-10-21
 
 ### Added

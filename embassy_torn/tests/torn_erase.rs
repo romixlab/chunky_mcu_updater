@@ -66,7 +66,8 @@ impl Tally {
 }
 
 macro_rules! suite {
-    ($m:ident, $eb:ident) => {
+    // `$fixed`: this embassy-boot already zeroes the magic before the STATE erase (PR 7329).
+    ($m:ident, $eb:ident, $fixed:expr) => {
         mod $m {
             use super::*;
             use embedded_storage::nor_flash::NorFlash;
@@ -267,8 +268,12 @@ macro_rules! suite {
                         reprogs.len(),
                         torn.len()
                     );
+                    // With the upstream fix, a clean cut between the zeroed magic and the erase also re-programs
+                    // word 0 with zeros on the next boot.
                     assert!(
-                        reprogs.iter().all(|r| r.zeros && r.at == STATE_AT + WRITE),
+                        reprogs
+                            .iter()
+                            .all(|r| r.zeros && (r.at == STATE_AT + WRITE || ($fixed && r.at == STATE_AT))),
                         "{reprogs:?}"
                     );
                     assert!(torn.iter().all(|r| r.zeros), "{torn:?}");
@@ -289,11 +294,15 @@ macro_rules! suite {
                     show("torn erase, words (stock)", scn, &t);
                     any += t.bad();
                 }
-                // This test documents the upstream bug: when embassy-boot fixes it, this assertion flips.
-                assert!(
-                    any > 0,
-                    "no torn erase corrupted anything: the claim does not reproduce"
-                );
+                // This test documents the upstream bug; for an embassy-boot with the fix it flips.
+                if $fixed {
+                    assert_eq!(any, 0, "the upstream fix does not cover every torn erase");
+                } else {
+                    assert!(
+                        any > 0,
+                        "no torn erase corrupted anything: the claim does not reproduce"
+                    );
+                }
             }
 
             #[test]
@@ -304,7 +313,11 @@ macro_rules! suite {
                     show("torn erase, bits (stock)", scn, &t);
                     any += t.bad();
                 }
-                assert!(any > 0);
+                if $fixed {
+                    assert_eq!(any, 0, "the upstream fix does not cover every torn erase");
+                } else {
+                    assert!(any > 0);
+                }
             }
 
             #[test]
@@ -365,7 +378,11 @@ macro_rules! suite {
                         stringify!($m)
                     );
                     println!("    end: {}", dump(&f));
-                    assert_eq!(v, Verdict::Mixed(expect));
+                    if $fixed {
+                        assert!(matches!(v, Verdict::Fine(_)), "{v:?}");
+                    } else {
+                        assert_eq!(v, Verdict::Mixed(expect));
+                    }
                 }
                 // Step by step for Revert, by hand.
                 let f = Flash::new();
@@ -407,8 +424,9 @@ macro_rules! suite {
     };
 }
 
-suite!(eb_0_7_0, eb07);
-suite!(eb_master, ebmaster);
+suite!(eb_0_7_0, eb07, false);
+suite!(eb_master, ebmaster, false);
+suite!(eb_pr7329, ebpr, true);
 
 /// git master's `BootLoader::verify_update` rejects a bad signature by erasing STATE while it says SWAP.
 /// Progress is zero there, so a torn erase cannot make a swap resume in the middle: checked here for every tear.

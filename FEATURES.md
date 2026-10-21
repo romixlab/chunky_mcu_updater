@@ -160,7 +160,8 @@ Design: [SECURITY.md](SECURITY.md).
   swap starts (both backends; a cut in it on the swap backend can report "reverted", SECURITY.md findings).
 - ✅ **BOOT-5 embassy-torn-erase-repro** — stand-alone reproduction of the embassy-boot torn state-erase bug
   (`embassy_torn/`, report in `embassy_torn/REPORT.md`): stock 0.7.0 and git master both lose the images, the
-  zero-the-magic-first guard survives every tear. Open: send it upstream.
+  zero-the-magic-first guard survives every tear. Upstream: issue embassy-rs/embassy#7235 accepted 21 Oct 2026,
+  the fix PR 7329 checked here with 0 bad (`REPORT.md` "Upstream fix, checked").
 - ✅ **BOOT-2 bank-swap-backend** — `chunky_bank`: hardware bank swap behind `BankSwitch` (the SWAP_BANK option
   bit). The other bank is verified (image, floor, and that it holds this bootloader) before the bit is programmed,
   ACTIVE on every boot, one trial boot, revert by flipping the bit back after verifying what it goes back to;

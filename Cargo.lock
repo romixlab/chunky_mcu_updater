@@ -695,6 +695,19 @@ dependencies = [
 [[package]]
 name = "embassy-boot"
 version = "0.7.0"
+source = "git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932#153d2e802e765be6193187ef3823d63f0453e932"
+dependencies = [
+ "document-features",
+ "embassy-crypto",
+ "embassy-embedded-hal 0.6.0 (git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932)",
+ "embassy-sync 0.8.0 (git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932)",
+ "embedded-storage",
+ "embedded-storage-async",
+]
+
+[[package]]
+name = "embassy-boot"
+version = "0.7.0"
 source = "git+https://github.com/embassy-rs/embassy?rev=34191ee2badce9d4ba63ac4545dc1d8abd1495eb#34191ee2badce9d4ba63ac4545dc1d8abd1495eb"
 dependencies = [
  "digest 0.10.7",
@@ -705,6 +718,14 @@ dependencies = [
  "embedded-storage",
  "embedded-storage-async",
  "signature",
+]
+
+[[package]]
+name = "embassy-crypto"
+version = "0.1.0"
+source = "git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932#153d2e802e765be6193187ef3823d63f0453e932"
+dependencies = [
+ "unitrait",
 ]
 
 [[package]]
@@ -727,6 +748,20 @@ dependencies = [
 [[package]]
 name = "embassy-embedded-hal"
 version = "0.6.0"
+source = "git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932#153d2e802e765be6193187ef3823d63f0453e932"
+dependencies = [
+ "embassy-futures 0.1.2 (git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932)",
+ "embassy-sync 0.8.0 (git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932)",
+ "embedded-hal 0.2.7",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "embedded-storage",
+ "embedded-storage-async",
+]
+
+[[package]]
+name = "embassy-embedded-hal"
+version = "0.6.0"
 source = "git+https://github.com/embassy-rs/embassy?rev=34191ee2badce9d4ba63ac4545dc1d8abd1495eb#34191ee2badce9d4ba63ac4545dc1d8abd1495eb"
 dependencies = [
  "embassy-futures 0.1.2 (git+https://github.com/embassy-rs/embassy?rev=34191ee2badce9d4ba63ac4545dc1d8abd1495eb)",
@@ -744,6 +779,11 @@ name = "embassy-futures"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc2d050bdc5c21e0862a89256ed8029ae6c290a93aecefc73084b3002cdebb01"
+
+[[package]]
+name = "embassy-futures"
+version = "0.1.2"
+source = "git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932#153d2e802e765be6193187ef3823d63f0453e932"
 
 [[package]]
 name = "embassy-futures"
@@ -776,6 +816,18 @@ dependencies = [
 [[package]]
 name = "embassy-sync"
 version = "0.8.0"
+source = "git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932#153d2e802e765be6193187ef3823d63f0453e932"
+dependencies = [
+ "critical-section",
+ "embedded-io-async",
+ "futures-core",
+ "futures-sink",
+ "heapless",
+]
+
+[[package]]
+name = "embassy-sync"
+version = "0.8.0"
 source = "git+https://github.com/embassy-rs/embassy?rev=34191ee2badce9d4ba63ac4545dc1d8abd1495eb#34191ee2badce9d4ba63ac4545dc1d8abd1495eb"
 dependencies = [
  "cfg-if",
@@ -791,6 +843,7 @@ name = "embassy_torn"
 version = "0.11.2"
 dependencies = [
  "embassy-boot 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "embassy-boot 0.7.0 (git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932)",
  "embassy-boot 0.7.0 (git+https://github.com/embassy-rs/embassy?rev=34191ee2badce9d4ba63ac4545dc1d8abd1495eb)",
  "embedded-storage",
 ]
@@ -1908,6 +1961,24 @@ name = "unicode-segmentation"
 version = "1.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c6f5d3c3b1bf09027a88a6bc961fc00497d651009560b5463668dc81b0fa87a8"
+
+[[package]]
+name = "unitrait"
+version = "2.0.0"
+source = "git+https://github.com/embassy-rs/unitrait?rev=bb96601b3d293fa27d1ca2891f6ea148e534e433#bb96601b3d293fa27d1ca2891f6ea148e534e433"
+dependencies = [
+ "unitrait-macros",
+]
+
+[[package]]
+name = "unitrait-macros"
+version = "2.0.0"
+source = "git+https://github.com/embassy-rs/unitrait?rev=bb96601b3d293fa27d1ca2891f6ea148e534e433#bb96601b3d293fa27d1ca2891f6ea148e534e433"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
 
 [[package]]
 name = "utf8parse"
