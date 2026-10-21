@@ -34,7 +34,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-use chunky::descriptor::{Expect, ImageDescriptor, ImageError, Trust, verify_image};
+use chunky::descriptor::{Expect, ImageDescriptor, ImageError, Scheme, Trust, verify_image};
 use chunky::ecc::EccError;
 use chunky::geometry::FlashGeometry;
 use chunky::manifest::read_slot_digest;
@@ -42,6 +42,8 @@ use chunky::plan::PLAN_HEADER_LEN;
 use chunky::{Applied, Applier, ApplyError, BootBackend, ChunkHash, RESEND_WINDOW, StepOp};
 use embedded_storage::nor_flash::{NorFlash, ReadNorFlash};
 use wire_weaver::prelude::MaxLen;
+/// The `ww_dfu` crate this one serves, for the firmware's handlers.
+pub use ww_dfu;
 use ww_dfu::{
     BootState, ChunkState, Error, LastResult, MAX_CHUNKS_PAGE, MAX_PIECE_LEN, MAX_PRODUCT_LEN, NodeInfo, Offers,
     Outcome, Profile, Progress, Role, Seal, Session, Slot, SlotLayout, SlotSwitch, StageLimits, Target,
@@ -237,8 +239,8 @@ where
             geometry_id: self.config.geometry.id(),
             product_id: self.running.product_id,
             seal: match self.config.trust.scheme() {
-                chunky::Scheme::Ed25519 => Seal::Ed25519,
-                chunky::Scheme::Unsigned => Seal::Unsigned,
+                Scheme::Unsigned => Seal::Unsigned,
+                Scheme::Ed25519 => Seal::Ed25519,
             },
             app_version: Some(self.running.version),
             version_floor: self.effective_floor(),
@@ -268,10 +270,13 @@ where
         if self.reverting {
             return Err(Error::WrongState(BootState::Trial));
         }
-        let trial = self.boot_state == chunky::BootState::Trial;
+        self.refresh()?;
+        if self.boot_state != chunky::BootState::Trial {
+            return Ok(());
+        }
         self.backend.confirm().map_err(|_| Error::Flash)?;
         self.refresh()?;
-        if trial && self.boot_state == chunky::BootState::Confirmed {
+        if self.boot_state == chunky::BootState::Confirmed {
             self.last_result = LastResult {
                 outcome: Outcome::Confirmed,
                 version: self.running.version,

@@ -34,7 +34,7 @@ pub trait BootBackend {
     /// The image in DFU is complete and verified: switch to it at the next reset.
     fn mark_staged(&mut self) -> Result<(), Self::Error>;
 
-    /// The running image works: keep it.
+    /// The running image works: keep it. Writes only on the trial image; does nothing in any other state.
     fn confirm(&mut self) -> Result<(), Self::Error>;
 
     /// Withdraws a staged image before the switch to it has started: the running image stays after the next
