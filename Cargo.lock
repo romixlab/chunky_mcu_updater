@@ -325,12 +325,24 @@ version = "0.11.1"
 dependencies = [
  "chunky",
  "chunky_server",
+ "chunky_sim",
  "chunky_ww",
+ "chunky_ww_test_api",
  "thiserror",
  "tokio",
  "tracing",
  "wire_weaver",
  "wire_weaver_client",
+ "ww_client_server",
+ "ww_device",
+ "ww_dfu",
+]
+
+[[package]]
+name = "chunky_ww_test_api"
+version = "0.1.0"
+dependencies = [
+ "wire_weaver",
  "ww_dfu",
 ]
 
@@ -2007,6 +2019,7 @@ dependencies = [
  "wire_weaver",
  "wire_weaver_snapshots",
  "ww_client_server",
+ "ww_device",
  "ww_framer",
  "ww_global",
  "ww_link",
@@ -2075,12 +2088,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
+name = "ww_block"
+version = "0.1.0"
+dependencies = [
+ "crc",
+ "wire_weaver",
+ "ww_error",
+]
+
+[[package]]
 name = "ww_client_server"
 version = "0.2.0"
 dependencies = [
  "wire_weaver",
  "ww_global",
  "ww_si",
+]
+
+[[package]]
+name = "ww_device"
+version = "0.5.0"
+dependencies = [
+ "embassy-futures 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wire_weaver",
+ "ww_client_server",
+ "ww_framer",
+ "ww_link",
+ "ww_tap",
 ]
 
 [[package]]
@@ -2121,6 +2155,7 @@ version = "0.5.0"
 dependencies = [
  "shrink_wrap",
  "wire_weaver",
+ "ww_block",
  "ww_framer",
  "ww_global",
  "ww_version",

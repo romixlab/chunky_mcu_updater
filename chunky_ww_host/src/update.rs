@@ -341,13 +341,13 @@ impl Node {
 
     /// `BootControl::boot_state`.
     pub async fn boot_state(&mut self) -> Result<BootState, UpdateError> {
-        self.dfu
-            .boot
-            .boot_state()
-            .with_timeout(self.timeouts.call)
-            .call()
-            .await
-            .map_err(UpdateError::Link)
+        let call = self.dfu.boot.boot_state().with_timeout(self.timeouts.call).call();
+        // On a link that went down (the device reset) a call waits for a reconnect instead of timing out
+        // (wire_weaver CLT-36): the host's own deadline, for the poll that notices the reset.
+        match tokio::time::timeout(2 * self.timeouts.call, call).await {
+            Ok(state) => state.map_err(UpdateError::Link),
+            Err(_) => Err(UpdateError::Link(ClientError::Timeout)),
+        }
     }
 
     /// `BootControl::confirm`: keep the running image.
