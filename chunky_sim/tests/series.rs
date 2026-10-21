@@ -44,6 +44,11 @@ fn stm32g0b1re_bank_swap() {
 }
 
 #[test]
+fn stm32h725ig_swap() {
+    updates_and_reverts::<H7, Swap>(chips::STM32H725IG);
+}
+
+#[test]
 fn stm32h7a3zi_bank_swap() {
     updates_and_reverts::<H7Mini, Bank>(chips::STM32H7A3ZI);
 }

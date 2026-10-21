@@ -5,6 +5,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `chips::STM32H725IG`: the STM32H72x 1 MB embassy-boot swap layout (128 KB bootloader, a sector each for STATE
+  and FLOOR, 256 KB ACTIVE, 384 KB DFU, 2 KB chunks), the layout of the B135 board, as preset `stm32h725ig`. (GEO-2)
+
 ## [0.11.1] - 2026-10-16
 
 ### Added
