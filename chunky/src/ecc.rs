@@ -4,6 +4,9 @@
 //! BusFault on H7. A flash driver for such a part catches the fault and returns an error for which
 //! [`EccError::is_ecc`] is true. Code that hashes or boots then treats the data as garbage instead of looping in
 //! the fault handler.
+//!
+//! With feature `ww-ecc-flash`, WireWeaver's `ww_ecc_flash` is such a driver for STM32G0 and STM32H7: its strict
+//! mode (`EccSafeFlash::new_strict`) fails a read of a torn word with `Error::Ecc`, which is [`EccError::is_ecc`].
 
 use embedded_storage::nor_flash::{ErrorType, NorFlash, ReadNorFlash};
 
@@ -11,6 +14,13 @@ use embedded_storage::nor_flash::{ErrorType, NorFlash, ReadNorFlash};
 pub trait EccError {
     /// True when the read faulted on ECC; the data is unknown, the flash itself still works.
     fn is_ecc(&self) -> bool;
+}
+
+#[cfg(feature = "ww-ecc-flash")]
+impl<E> EccError for ww_ecc_flash::Error<E> {
+    fn is_ecc(&self) -> bool {
+        ww_ecc_flash::Error::is_ecc(self)
+    }
 }
 
 /// Why a [`try_read`] failed.

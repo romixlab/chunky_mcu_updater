@@ -81,8 +81,13 @@ IDs are stable: never renumbered, never reused. New ids come from `tpm work clai
   `EccError`, and a power-cut test on a Nucleo. G0 half written for the power-cut bench (HW-3, B129A):
   `bench_fw_common::ecc` (the NMI checks and clears FLASH_ECCR/ECCR2.ECCD, counts the fault and its address in the
   report; a read that ran into it returns an error with `is_ecc`). Run on hardware (HW-4, `reset-3-guarded`): it
-  caught up to 49 double errors in one boot and the bootloader carried on. Then H7 BusFault, and
-  the reader as a library crate a real bootloader can use.
+  caught up to 49 double errors in one boot and the bootloader carried on. The reader as a library crate a real
+  bootloader can use, G0 and H7: WireWeaver's `ww_ecc_flash` in strict mode (`EccSafeFlash::new_strict`, H7
+  bus error ignored under FAULTMASK + BFHFNMIGN, then `DBECCERR`; G0 through its NMI hook) fails a read of a torn
+  word with `Error::Ecc`, and chunky's feature `ww-ecc-flash` implements `EccError` for it (tested through
+  `try_read` and `Masked`, `chunky/tests/ww_ecc_flash.rs`). For the B135 (H72x) bootloader and app. Open: the H7
+  path on a board (wire_weaver `examples_mcu/ecc_flash_h7`, a scratch word programmed twice), then a power-cut
+  test on a Nucleo.
 
 ## SEC — security
 
