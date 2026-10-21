@@ -71,16 +71,6 @@ pub const STM32G0B1RE_FACTORY_LAYOUT: Layout = Layout::checked_for_any_series(
     },
 );
 
-/// STM32H725IG (1 MB in eight 128 KB sectors, one bank), embassy-boot swap: 128 KB bootloader, one sector each of
-/// STATE and FLOOR, 256 KB ACTIVE at 0x0806_0000, 384 KB DFU. The layout of the B135 USB-CAN adapter
-/// (vb135_fdcan_iso_usb_fw BOOT-3), which computes the same `Layout` from the series rules in its own crate.
-pub const STM32H725IG_LAYOUT: Layout = Layout::checked_for_any_series(
-    Chip::single(Line::H72x, 1024 * KB),
-    board(Profile::Swap, 128 * KB, 2 * KB),
-);
-/// Geometry of [`STM32H725IG_LAYOUT`].
-pub const STM32H725IG: FlashGeometry = STM32H725IG_LAYOUT.geometry();
-
 /// STM32H743ZI (two banks of eight 128 KB sectors), hardware bank swap (`chunky_bank`), 2 KB chunks.
 ///
 /// Each bank: one sector for the bootloader (the same bytes in both banks, since SWAP_BANK moves the whole bank,
@@ -113,26 +103,24 @@ pub const RP2354_LAYOUT: Layout = Layout::checked_for_any_series(
 pub const RP2354: FlashGeometry = RP2354_LAYOUT.geometry();
 
 /// Every preset that has a geometry, by name, for host tools.
-pub const PRESETS: [(&str, &FlashGeometry); 8] = [
+pub const PRESETS: [(&str, &FlashGeometry); 7] = [
     ("stm32f103cb", &STM32F103CB),
     ("stm32g071rb", &STM32G071RB),
     ("stm32g0b1re", &STM32G0B1RE),
     ("stm32g0b1re-bank", &STM32G0B1RE_BANK),
-    ("stm32h725ig", &STM32H725IG),
     ("stm32h743zi", &STM32H743ZI),
     ("stm32h7a3zi", &STM32H7A3ZI),
     ("rp2354", &RP2354),
 ];
 
 /// Every worked layout by name, those without a backend yet included.
-pub const LAYOUTS: [(&str, &Layout); 10] = [
+pub const LAYOUTS: [(&str, &Layout); 9] = [
     ("stm32f103cb", &STM32F103CB_LAYOUT),
     ("stm32f103cb-golden", &STM32F103CB_GOLDEN_LAYOUT),
     ("stm32g071rb", &STM32G071RB_LAYOUT),
     ("stm32g0b1re", &STM32G0B1RE_LAYOUT),
     ("stm32g0b1re-bank", &STM32G0B1RE_BANK_LAYOUT),
     ("stm32g0b1re-factory", &STM32G0B1RE_FACTORY_LAYOUT),
-    ("stm32h725ig", &STM32H725IG_LAYOUT),
     ("stm32h743zi", &STM32H743ZI_LAYOUT),
     ("stm32h7a3zi", &STM32H7A3ZI_LAYOUT),
     ("rp2354", &RP2354_LAYOUT),

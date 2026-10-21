@@ -98,16 +98,6 @@ fn worked_examples() {
     assert_eq!(factory.active.len, 160 * KB);
     assert_eq!(factory.factory, Some(region(352 * KB, 160 * KB)));
 
-    // B135: BL | STATE | FLOOR | ACTIVE 256 KB at 0x0806_0000 | DFU 384 KB, the whole 1 MB.
-    let h725 = chips::STM32H725IG_LAYOUT;
-    assert_eq!((h725.erase, h725.write, h725.chunk), (128 * KB, 32, 2 * KB));
-    assert_eq!(h725.bootloader, region(0, 128 * KB));
-    assert_eq!(h725.state, region(128 * KB, 128 * KB));
-    assert_eq!(h725.floor, region(256 * KB, 128 * KB));
-    assert_eq!(h725.active, region(384 * KB, 256 * KB));
-    assert_eq!(h725.dfu, Some(region(640 * KB, 384 * KB)));
-    assert_eq!(h725.spare, 0);
-
     let h7a3 = chips::STM32H7A3ZI_LAYOUT;
     assert_eq!((h7a3.erase, h7a3.facts.unit, h7a3.write), (8 * KB, 16, 32));
     assert_eq!(h7a3.active, region(64 * KB, 952 * KB));

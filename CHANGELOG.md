@@ -5,11 +5,6 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Added
-
-- Preset `stm32h725ig` (`chips::STM32H725IG`): H72x 1 MB, embassy-boot swap, 128 KB bootloader, 2 KB chunks, ACTIVE
-  256 KB at 0x0806_0000, DFU 384 KB; the layout of the B135 USB-CAN adapter, for `chunky image build --chip`. (GEO-2)
-
 ## [0.11.1] - 2026-10-16
 
 ### Added
