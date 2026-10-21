@@ -19,6 +19,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   application closes the open record while no target is set). (NET-1)
 - `chunky_ww`: the device side of `ww_dfu` (UpdateNode, BootControl, Inventory, Stage) on the apply engine and a
   boot backend, no_std. (NET-1)
+- `chunky_ww_host`: updates a `chunky_ww` device over WireWeaver: node, manifest, plan, pipelined steps with
+  timeouts from the layout (an STM32H7 sector erase up to 4 s), re-planning when the node finds DFU changed
+  (`CUSTOM_NOT_BLANK`), reboot into the trial, the device's confirm or revert; progress events. `ww dfu flash`
+  in wire_weaver is built on it. (NET-2)
+- `payload_from_elf`: the ACTIVE payload of an ELF by load address. (SRV-28)
 
 ## [0.11.1] - 2026-10-16
 

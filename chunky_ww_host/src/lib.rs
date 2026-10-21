@@ -33,4 +33,4 @@ pub use update::{
     Event, Node, Options, Reconnect, Report, SealFor, UpdateError, check_image, flash, preset_geometry,
     reboot_into_trial, scheme, seal_for_node, wait_confirmed,
 };
-pub use ww_dfu;
+pub use {chunky, chunky_server, ww_dfu};
