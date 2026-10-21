@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.3] - 2026-10-21
+
 ### Added
 
 - embassy_torn: embassy-boot PR 7329 (lulf's fix for #7235, the magic zeroed before the STATE erase) runs as a third
