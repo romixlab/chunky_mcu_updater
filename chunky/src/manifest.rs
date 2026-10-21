@@ -176,13 +176,11 @@ where
     assert!(buf.len() >= chunk);
     let buf = &mut buf[..chunk];
     let mut failed = false;
-    let states = (0..geometry.chunks()).map_while(|index| {
-        match ChunkState::read(flash, index * geometry.chunk, buf) {
-            Ok(state) => Some(state),
-            Err(_) => {
-                failed = true;
-                None
-            }
+    let states = (0..geometry.chunks()).map_while(|index| match ChunkState::read(flash, index * geometry.chunk, buf) {
+        Ok(state) => Some(state),
+        Err(_) => {
+            failed = true;
+            None
         }
     });
     let digest = slot_digest(&manifest_header(geometry, scheme), states);

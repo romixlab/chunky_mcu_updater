@@ -16,6 +16,7 @@ use chunky::plan::PLAN_HEADER_LEN;
 use chunky::{Applier, ApplyError, BootBackend, BootState, Part, ReadOnly};
 use chunky_bank::{BankMap, BankParts, BankSwitch, BankUpdater};
 use chunky_swap::{MAX_WRITE_SIZE, SwapUpdater};
+use chunky_ww::{ChunkyNode, ConfigError, Limits, NodeConfig};
 
 use crate::flash::{FlashModel, SimError, SimFlash};
 
@@ -274,6 +275,22 @@ impl<M: FlashModel> Device<M, Bank> {
     }
 }
 
+/// The application's `ww_dfu` node on a simulated device ([`Device::node`]).
+pub type SimNode<'a, M, B> =
+    ChunkyNode<'a, ReadOnly<Part<'a, SimFlash<M>>>, Part<'a, SimFlash<M>>, <B as Backend<M>>::Updater<'a>>;
+
+/// Why [`Device::node`] made no node.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NodeError {
+    /// The floor did not read (power was cut).
+    Floor,
+    /// `ChunkyNode::new` refused.
+    Config(ConfigError),
+}
+
+/// The product name the simulated nodes report.
+pub const SIM_PRODUCT: &str = "chunky-sim";
+
 /// The simulated device.
 pub struct Device<M: FlashModel, B = Swap> {
     /// The flash. Tests reach in to arm power cuts, inject faults and inspect.
@@ -409,6 +426,41 @@ impl<M: FlashModel, B: Backend<M>> Device<M, B> {
         let mut step = |applier: &mut Applier<'_>, bytes: &[u8]| applier.step(bytes, &mut active, &mut dfu, &mut buf);
         while next(&mut applier, &mut step)? {}
         applier.finish(&mut dfu, &mut backend, &mut buf)
+    }
+
+    /// The application's `ww_dfu` node (`chunky_ww`), as a firmware makes it at start: the floor read once, ACTIVE
+    /// read-only, DFU without the swap's spare page. `word` is one write unit, `buf` two chunks.
+    pub fn node<'a>(
+        &'a self,
+        limits: Limits,
+        word: &'a mut [u8],
+        buf: &'a mut [u8],
+    ) -> Result<SimNode<'a, M, B>, NodeError> {
+        let floor = {
+            let mut buf = [0; MAX_WRITE_SIZE];
+            read_floor(
+                &mut ReadOnly::new(self.part(B::state_and_floor(self).1)),
+                M::WRITE_SIZE,
+                &mut buf,
+            )
+            .map_err(|_| NodeError::Floor)?
+        };
+        let config = NodeConfig {
+            geometry: &self.geometry,
+            trust: self.trust,
+            product_id: self.product_id,
+            product: SIM_PRODUCT,
+            floor,
+            limits,
+        };
+        ChunkyNode::new(
+            config,
+            ReadOnly::new(self.part(self.geometry.active)),
+            self.part(self.geometry.dfu).prefix(self.geometry.active.len),
+            B::updater(self, word),
+            buf,
+        )
+        .map_err(NodeError::Config)
     }
 
     /// The application reports where it stands.

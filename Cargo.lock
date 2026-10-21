@@ -278,6 +278,7 @@ dependencies = [
  "chunky_format",
  "chunky_server",
  "chunky_swap",
+ "chunky_ww",
  "ed25519-dalek",
  "embedded-storage",
  "proptest",
