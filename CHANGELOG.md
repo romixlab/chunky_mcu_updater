@@ -36,9 +36,6 @@ and the project uses [Semantic Versioning](https://semver.org/).
   (`CUSTOM_NOT_BLANK`), reboot into the trial, the device's confirm or revert; progress events. `ww dfu flash`
   in wire_weaver is built on it. (NET-2)
 - `payload_from_elf`: the ACTIVE payload of an ELF by load address. (SRV-28)
-- `chunky_ww_host` example `usb_flash`: updates a `chunky_ww` device on USB with a sealed image (found by serial
-  number or product string, found again by serial number after each reset), until `ww dfu flash` does it; vb135's
-  `just update` uses it. (NET-2)
 
 ### Fixed
 
