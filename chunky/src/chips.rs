@@ -84,6 +84,17 @@ pub const STM32H743ZI_LAYOUT: Layout = Layout::checked_for_any_series(
 /// Geometry of [`STM32H743ZI_LAYOUT`].
 pub const STM32H743ZI: FlashGeometry = STM32H743ZI_LAYOUT.geometry();
 
+/// STM32H725IG (1 MB, one bank of eight 128 KB sectors), embassy-boot swap, 2 KB chunks: 128 KB bootloader,
+/// then STATE, FLOOR, 256 KB ACTIVE and 384 KB DFU, one sector each for STATE and FLOOR. The layout of the B135
+/// board and the test geometry of `chunky_ww`. The CPU stalls while a sector of its own bank erases (about
+/// two seconds per sector, more at worst): a host waits that long for an ERASE step.
+pub const STM32H725IG_LAYOUT: Layout = Layout::checked_for_any_series(
+    Chip::single(Line::H72x, 1024 * KB),
+    board(Profile::Swap, 128 * KB, 2 * KB),
+);
+/// Geometry of [`STM32H725IG_LAYOUT`].
+pub const STM32H725IG: FlashGeometry = STM32H725IG_LAYOUT.geometry();
+
 /// STM32H7A3ZI (two banks of 128 sectors of 8 KB), hardware bank swap: per bank a 64 KB bootloader, a 952 KB
 /// image, and STATE or FLOOR in the last sector.
 pub const STM32H7A3ZI_LAYOUT: Layout = Layout::checked_for_any_series(
@@ -103,18 +114,19 @@ pub const RP2354_LAYOUT: Layout = Layout::checked_for_any_series(
 pub const RP2354: FlashGeometry = RP2354_LAYOUT.geometry();
 
 /// Every preset that has a geometry, by name, for host tools.
-pub const PRESETS: [(&str, &FlashGeometry); 7] = [
+pub const PRESETS: [(&str, &FlashGeometry); 8] = [
     ("stm32f103cb", &STM32F103CB),
     ("stm32g071rb", &STM32G071RB),
     ("stm32g0b1re", &STM32G0B1RE),
     ("stm32g0b1re-bank", &STM32G0B1RE_BANK),
     ("stm32h743zi", &STM32H743ZI),
+    ("stm32h725ig", &STM32H725IG),
     ("stm32h7a3zi", &STM32H7A3ZI),
     ("rp2354", &RP2354),
 ];
 
 /// Every worked layout by name, those without a backend yet included.
-pub const LAYOUTS: [(&str, &Layout); 9] = [
+pub const LAYOUTS: [(&str, &Layout); 10] = [
     ("stm32f103cb", &STM32F103CB_LAYOUT),
     ("stm32f103cb-golden", &STM32F103CB_GOLDEN_LAYOUT),
     ("stm32g071rb", &STM32G071RB_LAYOUT),
@@ -122,6 +134,7 @@ pub const LAYOUTS: [(&str, &Layout); 9] = [
     ("stm32g0b1re-bank", &STM32G0B1RE_BANK_LAYOUT),
     ("stm32g0b1re-factory", &STM32G0B1RE_FACTORY_LAYOUT),
     ("stm32h743zi", &STM32H743ZI_LAYOUT),
+    ("stm32h725ig", &STM32H725IG_LAYOUT),
     ("stm32h7a3zi", &STM32H7A3ZI_LAYOUT),
     ("rp2354", &RP2354_LAYOUT),
 ];

@@ -103,6 +103,14 @@ fn worked_examples() {
     assert_eq!(h7a3.active, region(64 * KB, 952 * KB));
     assert_eq!(h7a3.dfu, Some(region(MB + 64 * KB, 952 * KB)));
 
+    // The B135 layout: a sector each for the bootloader, STATE and FLOOR, two for ACTIVE, three for DFU.
+    let h725 = chips::STM32H725IG_LAYOUT;
+    assert_eq!((h725.erase, h725.write, h725.bank), (128 * KB, 32, None));
+    assert_eq!(h725.state, region(128 * KB, 128 * KB));
+    assert_eq!(h725.floor, region(256 * KB, 128 * KB));
+    assert_eq!(h725.active, region(384 * KB, 256 * KB));
+    assert_eq!(h725.dfu, Some(region(640 * KB, 384 * KB)));
+
     let rp = chips::RP2354_LAYOUT;
     assert_eq!(rp.active.len, 988 * KB);
     assert_eq!(rp.dfu.map(|dfu| dfu.len), Some(988 * KB));
@@ -193,7 +201,7 @@ fn rules_agree_with_real_parts() {
         ("STM32L4R5ZI dual", Line::L4Plus, MB, MB, 4 * KB, 8, MB),
         ("STM32H730VB", Line::H72x, 128 * KB, 0, 128 * KB, 32, 0),
         ("STM32H725RE", Line::H72x, 512 * KB, 0, 128 * KB, 32, 0),
-        ("STM32H723ZG", Line::H72x, MB, 0, 128 * KB, 32, 0),
+        ("STM32H725IG", Line::H72x, MB, 0, 128 * KB, 32, 0),
         ("STM32H750VB", Line::H74x, 128 * KB, 0, 128 * KB, 32, 0),
         ("STM32H743ZG", Line::H74x, 512 * KB, 512 * KB, 128 * KB, 32, MB),
         ("STM32H743ZI", Line::H74x, MB, MB, 128 * KB, 32, MB),
