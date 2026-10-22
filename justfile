@@ -69,15 +69,28 @@ lint-bench-fw:
     cd bench/fw && cargo clippy -q --release -p bench_app --features image-a -- -D warnings
     cd bench/fw && cargo clippy -q --release -p bench_app --features image-b -- -D warnings
 
-# Build everything in release mode and install the `chunky` binary (cargo bin dir)
+# With tpm on PATH: tpm install (kept-releases stack, one copy on PATH); otherwise: cargo install
+# Build the `chunky` command line tool (deploy profile) and install it on this PC
 install:
-    cargo build --release --workspace --locked
-    cargo install --path chunky_cli --locked
+    cargo build --profile deploy --locked -p chunky_cli
+    if command -v tpm >/dev/null; then tpm install target/deploy/chunky; else cargo install --locked --path chunky_cli; fi
 
-# Bring this PC up to main: pull (refuses on local changes), then install
+# chunky_format, chunky_ww and chunky_ww_host build against the sibling wire_weaver checkout: bring it up to its main
+deps-pull:
+    git -C ../wire_weaver pull --ff-only
+
+# Refuses on local changes (names them, never discards them), before anything is pulled.
+# Bring this PC up to main: pull --ff-only, the sibling wire_weaver, install, check --version against main
 deploy:
+    #!/usr/bin/env bash
+    set -eu
+    dirty=$(git status --porcelain)
+    if [ -n "$dirty" ]; then echo "local changes, not deploying:"; echo "$dirty"; exit 1; fi
     git pull --ff-only
+    just deps-pull
     just install
+    chunky --version | grep -q "($(git rev-parse --short HEAD)" || { echo "chunky --version does not show $(git rev-parse --short HEAD):"; chunky --version; exit 1; }
+    chunky --version
 
 # The power-cut bench harness (bench/host, own workspace; the glitch git dependency is fetched by git over ssh)
 bench-cargo := "CARGO_NET_GIT_FETCH_WITH_CLI=true cargo"

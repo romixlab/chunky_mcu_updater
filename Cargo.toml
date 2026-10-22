@@ -24,6 +24,11 @@ sha2 = { version = "0.10", default-features = false }
 ed25519-dalek = { version = "2", default-features = false }
 proptest = "1"
 
+# just install / just deploy: release plus incremental compilation, so a one-file change recompiles that crate only
+[profile.deploy]
+inherits = "release"
+incremental = true
+
 # The power-cut sweeps hash and sign thousands of times: unoptimised crypto makes them crawl.
 [profile.dev.package."*"]
 opt-level = 3

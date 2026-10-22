@@ -2167,23 +2167,28 @@ dependencies = [
  "either",
  "futures-lite",
  "hex",
+ "libc",
  "nusb",
  "picoboot_host",
  "ron",
  "semver 1.0.28",
+ "sha2 0.11.1",
  "stm32_dfu_host",
  "strum",
  "strum_macros",
  "thiserror",
  "tokio",
  "tracing",
+ "windows-sys",
  "wire_weaver",
  "wire_weaver_snapshots",
  "ww_client_server",
+ "ww_date_time",
  "ww_device",
  "ww_framer",
  "ww_global",
  "ww_link",
+ "ww_local_socket",
  "ww_lz4",
  "ww_numeric",
  "ww_self",
@@ -2191,6 +2196,7 @@ dependencies = [
  "ww_stream",
  "ww_tap",
  "ww_tape",
+ "ww_timebase",
  "ww_version",
 ]
 
@@ -2267,6 +2273,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ww_date_time"
+version = "0.1.0"
+dependencies = [
+ "shrink_wrap",
+]
+
+[[package]]
 name = "ww_device"
 version = "0.5.0"
 dependencies = [
@@ -2329,6 +2342,13 @@ dependencies = [
  "ww_framer",
  "ww_global",
  "ww_version",
+]
+
+[[package]]
+name = "ww_local_socket"
+version = "0.5.0"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -2395,6 +2415,15 @@ dependencies = [
  "crc",
  "shrink_wrap",
  "ww_version",
+]
+
+[[package]]
+name = "ww_timebase"
+version = "0.1.0"
+dependencies = [
+ "wire_weaver",
+ "ww_date_time",
+ "ww_si",
 ]
 
 [[package]]

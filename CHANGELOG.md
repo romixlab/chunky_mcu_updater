@@ -5,6 +5,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `just install` builds `chunky_cli` with a `deploy` profile (release plus incremental) and puts `chunky` on PATH once through `tpm install` when tpm is there (else `cargo install --locked`) instead of `cargo install`; `just deploy` refuses on local changes, pulls, pulls the sibling wire_weaver (`just deps-pull`), installs and checks `chunky --version` against main's commit.
+
 ## [0.11.3] - 2026-10-21
 
 ### Added
