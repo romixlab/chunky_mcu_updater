@@ -190,6 +190,14 @@ Design: [SECURITY.md](SECURITY.md).
   protects it yet.
 - 💡 **BOOT-4 rot-fallback** — ACTIVE that rots after it was confirmed falls back to the previous image instead of
   recovery. Cheapest on the bank backend, where the previous image is one bit away.
+- 🚧 **BOOT-8 embassy-boot-fuzz** — the embassy-boot power-fail test (`embassy-boot/tests/power_fail*` on the fork's
+  `upstream/boot-fuzz`) driven by a coverage-guided fuzzer: `embassy-boot/fuzz/` (own `[workspace]`, never built by
+  embassy CI, libFuzzer through cargo-fuzz), the same byte string as `POWER_FAIL_REPLAY` (byte 0 picks one of the 19
+  flash models), seeds made from the sweep scenarios, a dictionary of the step bytes, known classes counted not
+  crashes (`POWER_FAIL_KNOWN_CRASH` makes them crashes). On the branch `upstream/boot-fuzz-afl` in `~/git/embassy`;
+  a 5 min run on main finds only known classes, with 153d2e802 (#7235 fix) reverted it finds #7235. Not done: the
+  AFL++ target (cargo-afl 0.18.2 does not build here, AFL++ 4.40c refuses LLVM 23), pushing to the fork (the
+  person's go), the upstream PR.
 
 ## CLI — command line
 
