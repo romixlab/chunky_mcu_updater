@@ -162,6 +162,13 @@ Design: [SECURITY.md](SECURITY.md).
   (`embassy_torn/`, report in `embassy_torn/REPORT.md`): stock 0.7.0 and git master both lose the images, the
   zero-the-magic-first guard survives every tear. Upstream: issue embassy-rs/embassy#7235 accepted 21 Oct 2026,
   the fix PR 7329 checked here with 0 bad (`REPORT.md` "Upstream fix, checked").
+- 📋 **BOOT-8 embassy-boot-fuzz** — a power-fail fuzz test for embassy-boot, to offer upstream: flash models of
+  every family embassy-boot-stm32/-nrf/-rp runs on (write unit, sectors, erase value, overwrite rules, ECC, torn
+  programs and erases, from the reference manuals), the model, layout and scenario all chosen by the input, real
+  `BootLoader` and firmware updater, invariants checked after every cut; `cargo test` without a fuzzer plus a
+  cargo-fuzz target. Lives in embassy's tree (`embassy-boot/tests/`), not here; P2625 release
+  `embassy-boot-fuzz`. The zoo predicts rule breaks on L0/L1 (erase value 0x00), U5/WBA/L5/U3 (zero over zero
+  refused) and nRF (writes per word), to confirm on the model.
 - ✅ **BOOT-2 bank-swap-backend** — `chunky_bank`: hardware bank swap behind `BankSwitch` (the SWAP_BANK option
   bit). The other bank is verified (image, floor, and that it holds this bootloader) before the bit is programmed,
   ACTIVE on every boot, one trial boot, revert by flipping the bit back after verifying what it goes back to;
