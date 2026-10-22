@@ -5,6 +5,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `chunky_ww_host`'s `NoStage` error message names `ww dfu stm32 flash` / `ww dfu rp flash` (wire_weaver renamed `ww stm32dfu` / `ww bootsel` under `ww dfu`; the old names still run as hidden aliases for now).
+
 ## [0.11.4] - 2026-10-22
 
 ### Changed

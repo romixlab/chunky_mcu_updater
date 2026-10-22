@@ -45,7 +45,7 @@ pub enum UpdateError {
     },
     /// The device does not receive updates in its app: its updater is something else (a boot ROM).
     #[error(
-        "the device's app does not receive updates (Profile::{profile:?}, no Stage): reboot it into its updater (a boot ROM: `ww stm32dfu flash`, `ww bootsel flash`)"
+        "the device's app does not receive updates (Profile::{profile:?}, no Stage): reboot it into its updater (a boot ROM: `ww dfu stm32 flash`, `ww dfu rp flash`)"
     )]
     NoStage {
         /// How the device switches images.
