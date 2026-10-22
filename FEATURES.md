@@ -195,7 +195,7 @@ Design: [SECURITY.md](SECURITY.md).
   embassy CI, libFuzzer through cargo-fuzz), the same byte string as `POWER_FAIL_REPLAY` (byte 0 picks one of the 19
   flash models), seeds made from the sweep scenarios, a dictionary of the step bytes, known classes counted not
   crashes (`POWER_FAIL_KNOWN_CRASH` makes them crashes). On the branch `upstream/boot-fuzz-afl` in `~/git/embassy`;
-  a 5 min run on main finds only known classes, with 153d2e802 (#7235 fix) reverted it finds #7235. Not done: the
+  a 5 min run on main finds only known classes (it found a simulator bug with more than 62 downloads, fixed in scenario.rs with a regression test), with 153d2e802 (#7235 fix) reverted it finds #7235. Not done: the
   AFL++ target (cargo-afl 0.18.2 does not build here, AFL++ 4.40c refuses LLVM 23), pushing to the fork (the
   person's go), the upstream PR.
 
