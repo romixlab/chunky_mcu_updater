@@ -167,10 +167,11 @@ Design: [SECURITY.md](SECURITY.md).
   programs and erases, from the reference manuals), the model, layout and scenario all chosen by the input, real
   `BootLoader` and firmware updater, invariants checked after every cut; `cargo test` without a fuzzer plus a
   cargo-fuzz target. Lives in embassy's tree (`embassy-boot/tests/`), not here; P2625 release
-  `embassy-boot-fuzz`. Prototype on embassy branch `upstream/boot-fuzz` (d17a8de9a: F1, G0, QSPI, L0, L1): it
-  reproduces #7235 with the fix reverted, confirms the L0 brick and L1 silent non-update (erase value 0x00), and
-  found a cut inside `mark_booted` reading as Revert with the new image kept, and on byte-wide flash a torn magic
-  reading as SWAP. Still to model: U5/WBA/L5/U3 (zero over zero refused), nRF (writes per word), H7.
+  `embassy-boot-fuzz`. On embassy branch `upstream/boot-fuzz` (d17a8de9a, e483ee283): 19 models from the
+  reference manuals. It reproduces #7235 with the fix reverted, and finds the L0 brick and L1 silent non-update
+  (erase value 0x00), a U5/WBA/L5/U3 brick after one cut (the revert tail writes zeros over zeros, refused), nRF
+  writes per word beyond n_WRITE after two cuts, an H7 fault after PR 7329's magic overwrite, a cut inside
+  `mark_booted` reading as Revert, and on byte-wide flash a torn magic reading as SWAP.
 - ✅ **BOOT-2 bank-swap-backend** — `chunky_bank`: hardware bank swap behind `BankSwitch` (the SWAP_BANK option
   bit). The other bank is verified (image, floor, and that it holds this bootloader) before the bit is programmed,
   ACTIVE on every boot, one trial boot, revert by flipping the bit back after verifying what it goes back to;
