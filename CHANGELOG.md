@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.7] - 2026-10-23
+
 ### Added
 
 - Fuzzing of the embassy-boot power-fail test (BOOT-8): `embassy-boot/fuzz/` on the `upstream/boot-fuzz-afl` branch of the embassy clone (libFuzzer, seeds from the sweep scenarios, known classes counted); nothing in this repository changes.
