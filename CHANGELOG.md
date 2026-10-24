@@ -5,6 +5,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- wire_weaver is a git dependency (`https://github.com/vhrdtech/wire_weaver`, pinned by Cargo.lock) in every crate instead of a path into a sibling checkout, so a fresh clone builds and wire_weaver's `cargo install --git ... wire_weaver_cli` can take `chunky_ww_host` from here. For work on both repos at once use an uncommitted `.cargo/config.toml` `[patch]` (AGENTS.md "wire_weaver dependency"). `just deps-pull` now moves the lock pin (`cargo update -p wire_weaver`); `just deploy` no longer pulls a sibling.
+
 ## [0.11.7] - 2026-10-23
 
 ### Added

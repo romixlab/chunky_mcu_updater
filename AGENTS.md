@@ -43,6 +43,15 @@ moves one of those lines changes SECURITY.md in the same commit and is planned o
 - Code that reads bytes from outside (plan, manifest, descriptor) never panics on them, never indexes without a
   length check, and has a test that feeds it garbage.
 
+## wire_weaver dependency
+
+chunky takes wire_weaver (`shrink_wrap`, `wire_weaver`, `wire_weaver_client`, `ww_dfu`, `ww_client_server`, `ww_device`,
+`ww_ecc_flash`) as git dependencies on https://github.com/vhrdtech/wire_weaver, pinned by Cargo.lock, so a fresh clone
+(and wire_weaver's `cargo install --git`, which pulls chunky_ww_host from here) builds without sibling checkouts.
+`just deps-pull` moves the pin to wire_weaver's main (commit the lock). To work on both repos at once, put an
+uncommitted `.cargo/config.toml` in this checkout with `[patch."https://github.com/vhrdtech/wire_weaver"]` entries
+pointing at the paths of the sibling `../wire_weaver`; the lock then gets path entries, so don't commit it in that state.
+
 ## Layout
 
 Cargo workspace, edition 2024. Pure-Rust crates only (no `-sys`, no `cc`/`bindgen`): check `cargo tree` when
@@ -61,11 +70,11 @@ adding a dependency.
   the application's handle, `BankSwitch` the SWAP_BANK option bit, `log.rs` the state log of write-once flags.
 - `chunky_ww/` — the device side of WireWeaver `ww_dfu`, `no_std`: `ChunkyNode` answers UpdateNode, BootControl,
   Inventory and Stage on `Applier` and a `BootBackend`, puts WRITE pieces together, answers resends (APPLY-2).
-  Needs `../wire_weaver` (`ww_dfu`, `wire_weaver`); tested in `chunky_sim/tests/ww.rs` on `chips::STM32H725IG`.
+  Needs wire_weaver (`ww_dfu`, `wire_weaver`, a git dependency); tested in `chunky_sim/tests/ww.rs` on `chips::STM32H725IG`.
 - `chunky_format/` — the wire format as fixed-layout and head+tail shrink_wrap types (format 2, PROTO-3:
   descriptor, plan header, steps, manifest), what `chunky` reads and `chunky_server` writes: `signed!`, golden
   `vectors/` (made by `chunky_server::vectors`, `just vectors`), the generated C reader in `c/`, `size_bench/`
-  (own nightly workspace). Needs `../wire_weaver` (SW-44), and so does every crate above it.
+  (own nightly workspace). Needs wire_weaver (SW-44, a git dependency), and so does every crate above it.
 - `chunky_server/` — host side: `image.rs` (build and seal), `store.rs` (blob store), `manifest.rs` (parse),
   `planner.rs`, `vectors.rs` (the one generator of the golden vectors and `c/golden.h`).
 - `chunky_ww_host/` — host side of `chunky_ww` over WireWeaver: `update.rs` (`Node`, `flash`, sealing for a

@@ -13,9 +13,9 @@ unsigned = ["chunky/unsigned"]
 [dependencies]
 chunky.workspace = true
 embedded-storage.workspace = true
-# Local checkout next to this repository (~/git/wire_weaver), as for chunky_format.
-ww_dfu = { path = "../../wire_weaver/ww_stdlib/ww_dfu", default-features = false }
-wire_weaver = { path = "../../wire_weaver/wire_weaver", default-features = false }
+# wire_weaver from GitHub, pinned by Cargo.lock; local sibling work: see AGENTS.md "wire_weaver dependency".
+ww_dfu = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
 
 [dev-dependencies]
 chunky = { workspace = true, features = ["ed25519", "unsigned"] }

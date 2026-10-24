@@ -7,5 +7,5 @@ edition.workspace = true
 repository.workspace = true
 
 [dependencies]
-wire_weaver = { path = "../../../../wire_weaver/wire_weaver" }
-ww_dfu = { path = "../../../../wire_weaver/ww_stdlib/ww_dfu" }
+wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver" }
+ww_dfu = { git = "https://github.com/vhrdtech/wire_weaver" }

@@ -6,8 +6,8 @@ edition.workspace = true
 repository.workspace = true
 
 [dependencies]
-# Local checkout next to this repository (~/git/wire_weaver), as in the other repos that use it.
-shrink_wrap = { path = "../../wire_weaver/shrink_wrap/shrink_wrap", default-features = false }
+# wire_weaver from GitHub, pinned by Cargo.lock; local sibling work: see AGENTS.md "wire_weaver dependency".
+shrink_wrap = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
 
 [dev-dependencies]
 ed25519-dalek = { workspace = true, features = ["rand_core"] }

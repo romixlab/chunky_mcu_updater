@@ -31,10 +31,10 @@ chunky_format.workspace = true
 embedded-storage.workspace = true
 sha2.workspace = true
 ed25519-dalek = { workspace = true, optional = true }
-# Local checkout next to this repository (~/git/wire_weaver), as for shrink_wrap in chunky_format.
-ww_ecc_flash = { path = "../../wire_weaver/mcu/ww_ecc_flash", optional = true }
+# wire_weaver from GitHub, pinned by Cargo.lock; local sibling work: see AGENTS.md "wire_weaver dependency".
+ww_ecc_flash = { git = "https://github.com/vhrdtech/wire_weaver", optional = true }
 
 [dev-dependencies]
 chunky = { path = ".", features = ["ed25519", "unsigned", "ww-ecc-flash"] }
 # a family so the crate builds on the host; the tests only use its error type
-ww_ecc_flash = { path = "../../wire_weaver/mcu/ww_ecc_flash", features = ["stm32h7"] }
+ww_ecc_flash = { git = "https://github.com/vhrdtech/wire_weaver", features = ["stm32h7"] }

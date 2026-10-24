@@ -3,3 +3,4 @@
 /bench/fw/out
 /bench/results/*/dumps/
 /chunky_format/size_bench/target
+/.cargo/
