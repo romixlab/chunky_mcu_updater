@@ -76,12 +76,12 @@ lint-bench-fw:
     cd bench/fw && cargo clippy -q --release -p bench_app --features image-b -- -D warnings
 
 # With tpm on PATH: tpm install (kept-releases stack, one copy on PATH); otherwise: cargo install
-# Build the `chunky` command line tool (deploy profile) and install it on this PC
+# Build `chunky` and `ww-chunky` (the plugin `ww dfu flash` runs) with the deploy profile and install them on this PC
 install:
-    cargo build --profile deploy --locked -p chunky_cli
-    if command -v tpm >/dev/null; then tpm install target/deploy/chunky; else cargo install --locked --path chunky_cli; fi
+    cargo build --profile deploy --locked -p chunky_cli -p ww_chunky
+    if command -v tpm >/dev/null; then tpm install target/deploy/chunky; tpm install target/deploy/ww-chunky; else cargo install --locked --path chunky_cli; cargo install --locked --path ww_chunky; fi
 
-# chunky_format, chunky_ww and chunky_ww_host take wire_weaver from GitHub: move the pin in Cargo.lock to its main (commit the lock)
+# chunky_format, chunky_ww, chunky_ww_host and ww_chunky take wire_weaver from GitHub: move the pin in Cargo.lock to its main (commit the lock)
 deps-pull:
     cargo update -p wire_weaver
 

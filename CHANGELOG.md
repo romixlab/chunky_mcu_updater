@@ -5,6 +5,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `ww-chunky` (crate `ww_chunky`): the chunky updates of wire_weaver's `ww dfu flash` as a plugin of `ww` (`ww NAME` runs `ww-NAME` from PATH): `flash`, `status`, `confirm`, `revert`, `reboot`, the code that was in `wire_weaver_cli/src/cmd/dfu.rs`, with `ww`'s connection options (serial, label, product, vid:pid, USB path, timeouts, `WW_*` variables, `ww.toml`) through `wire_weaver_cli::plugin`, colour and progress bar as before, shell completion with live values (`ww dfu flash --<TAB>` asks it), `--version` with SHA and build time. `just install` puts it on PATH next to `chunky`. wire_weaver no longer depends on this repository, which cut the cycle between the two.
+
 ### Changed
 
 - wire_weaver is a git dependency (`https://github.com/vhrdtech/wire_weaver`, pinned by Cargo.lock) in every crate instead of a path into a sibling checkout, so a fresh clone builds and wire_weaver's `cargo install --git ... wire_weaver_cli` can take `chunky_ww_host` from here. For work on both repos at once use an uncommitted `.cargo/config.toml` `[patch]` (AGENTS.md "wire_weaver dependency"). `just deps-pull` now moves the lock pin (`cargo update -p wire_weaver`); `just deploy` no longer pulls a sibling.
