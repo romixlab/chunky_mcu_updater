@@ -6,10 +6,10 @@
 
 mod commands;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::{CommandFactory, FromArgMatches, Parser};
 use wire_weaver_cli::plugin::{self, DeviceArgs, Selection};
-use wire_weaver_client::{ClientMeta, DynClient};
+use wire_weaver_client::ClientMeta;
 
 const VERSION: &str = concat!(
     env!("CARGO_PKG_VERSION"),
@@ -54,10 +54,6 @@ async fn run() -> Result<()> {
     // who this program is to the device and a hub: one client instance for all its connections, so a claim it takes in
     // the hub holds for its own calls
     let meta = ClientMeta::new();
-    let config = selection.client_config().traits_only().client_meta(meta.clone());
-    let device = DynClient::from_config(config)
-        .connect()
-        .await
-        .with_context(|| format!("connecting to device ({selection}), run 'ww list' to see connected devices"))?;
+    let device = plugin::connect(&selection, &meta).await?;
     commands::run_command(cli.command, device, &selection, &meta).await
 }

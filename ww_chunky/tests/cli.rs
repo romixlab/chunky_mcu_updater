@@ -58,3 +58,10 @@ fn completion_for_ww() {
     let flags = stdout(&ww_chunky(&["flash", "--un"], &[("_WW_PLUGIN_COMPLETE", "1")]));
     assert!(flags.lines().any(|l| l.starts_with("--unsigned")), "{flags}");
 }
+
+/// `ww` runs the plugin with the typed words only after this answer.
+#[test]
+fn answers_the_plugin_probe() {
+    let out = stdout(&ww_chunky(&["--ww-plugin"], &[]));
+    assert_eq!(out.trim(), "ww-plugin 1");
+}

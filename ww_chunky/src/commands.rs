@@ -512,8 +512,8 @@ impl Ui {
     }
 }
 
-/// Finds the device again after it reset: gone from the bus and back under its serial number, then connected with
-/// the same selection, as the same client instance (its exclusive claim in a hub holds across the reset).
+/// Finds the device again after it reset: gone from the bus and back under its serial number (over RTT: retried until
+/// it answers through the probe), then connected with the same selection, as the same client instance (its exclusive claim in a hub holds across the reset).
 struct UsbReconnect {
     config: ClientConfig,
     follow: Option<Follow>,
@@ -536,7 +536,8 @@ impl UsbReconnect {
             .filter(|s| given.as_ref().is_none_or(|g| s.to_lowercase().contains(g)))
             .collect();
         let follow = match matching[..] {
-            [serial] => Some(Follow::new(serial.clone())),
+            // over RTT the probe stays on the bus while the device resets: connecting again is all there is
+            [serial] if selection.rtt().is_none() => Some(Follow::new(serial.clone())),
             _ => None,
         };
         Self {
