@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.8] - 2026-10-25
+
 ### Added
 
 - `ww-chunky` (crate `ww_chunky`): the chunky updates of wire_weaver's `ww dfu flash` as a plugin of `ww` (`ww NAME` runs `ww-NAME` from PATH): `flash`, `status`, `confirm`, `revert`, `reboot`, the code that was in `wire_weaver_cli/src/cmd/dfu.rs`, with `ww`'s connection options (serial, label, product, vid:pid, USB path, timeouts, `WW_*` variables, `ww.toml`) through `wire_weaver_cli::plugin`, colour and progress bar as before, shell completion with live values (`ww dfu flash --<TAB>` asks it), `--version` with SHA and build time. `just install` puts it on PATH next to `chunky`. wire_weaver no longer depends on this repository, which cut the cycle between the two.
