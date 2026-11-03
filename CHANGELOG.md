@@ -5,6 +5,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `just deps-pull` moved the wire_weaver git pin to its current main (P2404#2nov-1936), which fixed
+  `chunky_ww_host`'s `update.rs` building against the SRV-51/52 dispatcher rework: the `ww_dfu::Stage` /
+  `ww_dfu::Inventory` trait methods it calls (`limits`, `begin`, `finish`, `abort`, `chunks`) need the pin moved,
+  not a code change. One clippy fix along the way: `ww_chunky/src/commands.rs`'s `reboot` no longer needs `mut dfu`.
+
 ## [0.11.8] - 2026-10-25
 
 ### Added

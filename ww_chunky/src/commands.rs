@@ -200,7 +200,7 @@ async fn run(cmd: Command, device: DynClient, selection: &Selection, meta: &Clie
 }
 
 async fn reboot(into: Into, device: &DynClient) -> Result<()> {
-    let mut dfu = Dfu::new(device);
+    let dfu = Dfu::new(device);
     let (target, name) = match into {
         Into::Updater => (BootTarget::Updater, "updater"),
         Into::App => (BootTarget::App, "app"),
