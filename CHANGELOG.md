@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.9] - 2026-11-03
+
 ### Changed
 
 - `just deps-pull` moved the wire_weaver git pin to its current main (P2404#2nov-1936), which fixed
