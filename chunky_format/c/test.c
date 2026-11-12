@@ -191,7 +191,8 @@ static uint8_t *exact(const uint8_t *src, size_t len) {
     return b;
 }
 
-/* every prefix of a plan, and of each of its steps, is refused; so is NULL and an unknown step tag */
+/* every prefix of a plan, and of each of its steps, is refused; so are NULL, an unknown scheme, an unknown step
+   tag and an ERASE tagged as another op */
 static void check_short_plan(const uint8_t *plan, size_t plan_len) {
     chunky_plan_header_view_t h;
     chunky_signed_descriptor_view_t desc;
@@ -212,6 +213,8 @@ static void check_short_plan(const uint8_t *plan, size_t plan_len) {
     }
     CHECK(chunky_plan_header_view(NULL, plan_len, &h) != 0);
     CHECK(h.p == NULL && h.len == 0u);
+    CHECK(chunky_signed_descriptor_view(NULL, CHUNKY_SIGNED_DESCRIPTOR_LEN, &desc) != 0);
+    CHECK(chunky_descriptor_body_view(NULL, CHUNKY_DESCRIPTOR_BODY_LEN, &body) != 0);
 
     /* a scheme the descriptor body does not know */
     b = exact(plan, plan_len);
@@ -243,13 +246,20 @@ static void check_short_plan(const uint8_t *plan, size_t plan_len) {
         CHECK(chunky_step_view(b, step_len, &s) != 0);
         b[0] = 4u;
         CHECK(chunky_step_view(b, step_len, &s) != 0);
+        /* an ERASE's 3 bytes tagged as a COPY or a WRITE are too short for their head */
+        if (plan[at] == CHUNKY_STEP_ERASE) {
+            b[0] = CHUNKY_STEP_COPY;
+            CHECK(chunky_step_view(b, step_len, &s) != 0);
+            b[0] = CHUNKY_STEP_WRITE;
+            CHECK(chunky_step_view(b, step_len, &s) != 0);
+        }
         free(b);
         at += step_len;
     }
     CHECK(chunky_step_view(NULL, 16u, &s) != 0);
 }
 
-/* every prefix of a manifest is refused; so is NULL and an unknown entry tag */
+/* every prefix of a manifest is refused; so is NULL, an unknown scheme and an unknown entry tag */
 static void check_short_manifest(const uint8_t *m, size_t m_len) {
     chunky_manifest_header_view_t h;
     chunky_chunk_entry_view_t e;
@@ -258,6 +268,10 @@ static void check_short_manifest(const uint8_t *m, size_t m_len) {
 
     b = exact(m, m_len);
     CHECK(walk_manifest(b, m_len) == 0);
+    b[CHUNKY_MANIFEST_HEADER_SCHEME_OFFSET] = 3u; /* a scheme the header does not know */
+    CHECK(chunky_manifest_header_view(b, m_len, &h) != 0);
+    CHECK(walk_manifest(b, m_len) != 0);
+    memcpy(b, m, m_len);
     b[CHUNKY_MANIFEST_HEADER_LEN] = 3u;
     CHECK(chunky_chunk_entry_view(b + CHUNKY_MANIFEST_HEADER_LEN, m_len - CHUNKY_MANIFEST_HEADER_LEN, &e) != 0);
     CHECK(walk_manifest(b, m_len) != 0);
