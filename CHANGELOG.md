@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.10] - 2026-11-12
+
 ### Changed
 
 - The wire_weaver git pin moves to deda93f9c, its main with SW-79's checked C views. The end-to-end tests follow two API changes there: the simulated device's API crate declares its wire version (`[package.metadata.wire_weaver] wire = "w1.0"`, EVO-31), and `LinkConfig::new` takes the wire version and the image facts.

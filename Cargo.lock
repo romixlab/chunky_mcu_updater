@@ -197,7 +197,7 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
 name = "bench_fw_image"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "bench_layout",
  "object 0.37.3",
@@ -205,7 +205,7 @@ dependencies = [
 
 [[package]]
 name = "bench_layout"
-version = "0.11.9"
+version = "0.11.10"
 
 [[package]]
 name = "bincode"
@@ -490,7 +490,7 @@ dependencies = [
 
 [[package]]
 name = "chunky"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "chunky",
  "chunky_format",
@@ -502,7 +502,7 @@ dependencies = [
 
 [[package]]
 name = "chunky_bank"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "chunky",
  "embedded-storage",
@@ -510,7 +510,7 @@ dependencies = [
 
 [[package]]
 name = "chunky_cli"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "anstream",
  "anstyle",
@@ -523,7 +523,7 @@ dependencies = [
 
 [[package]]
 name = "chunky_format"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "ed25519-dalek",
  "sha2 0.10.9",
@@ -532,7 +532,7 @@ dependencies = [
 
 [[package]]
 name = "chunky_server"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "chunky",
  "chunky_format",
@@ -544,7 +544,7 @@ dependencies = [
 
 [[package]]
 name = "chunky_sim"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "chunky",
  "chunky_bank",
@@ -559,7 +559,7 @@ dependencies = [
 
 [[package]]
 name = "chunky_swap"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "chunky",
  "embassy-boot 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -568,7 +568,7 @@ dependencies = [
 
 [[package]]
 name = "chunky_ww"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "chunky",
  "embedded-storage",
@@ -578,7 +578,7 @@ dependencies = [
 
 [[package]]
 name = "chunky_ww_host"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "chunky",
  "chunky_server",
@@ -1486,7 +1486,7 @@ dependencies = [
 
 [[package]]
 name = "embassy_torn"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "embassy-boot 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "embassy-boot 0.7.0 (git+https://github.com/embassy-rs/embassy?rev=153d2e802e765be6193187ef3823d63f0453e932)",
@@ -4684,7 +4684,7 @@ dependencies = [
 
 [[package]]
 name = "ww_chunky"
-version = "0.11.9"
+version = "0.11.10"
 dependencies = [
  "anyhow",
  "chunky_ww_host",
