@@ -7,6 +7,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The wire_weaver git pin moves to deda93f9c, its main with SW-79's checked C views. The end-to-end tests follow two API changes there: the simulated device's API crate declares its wire version (`[package.metadata.wire_weaver] wire = "w1.0"`, EVO-31), and `LinkConfig::new` takes the wire version and the image facts.
 - The generated C reader `chunky_format/c/chunky_format.h` uses shrink_wrap's checked C views (wire_weaver SW-79, PROTO-3): `chunky_<type>_view(buf, len, &v)` checks the whole value before any field can be read, steps and manifest entries are walked with `chunky_step_view` / `chunky_chunk_entry_view` and `v.len`, variants are reached with `chunky_step_as_<op>` and `chunky_chunk_entry_as_hash`; `chunky_step_tail`, `chunky_step_tail_t` and the pointer-taking readers are gone. Wire format unchanged (format 2, the golden vectors are byte for byte the same). `c/test.c` now also refuses every shorter prefix of the golden plans, their steps and manifests, and `just test-c` runs under AddressSanitizer and UBSan.
 
 ## [0.11.9] - 2026-11-03

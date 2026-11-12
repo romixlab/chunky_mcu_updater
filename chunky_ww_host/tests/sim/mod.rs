@@ -418,7 +418,9 @@ async fn run_app(
     let rx = ww_device::FramedRx::new(source, &mut rx_buf);
     let config = LinkConfig::new(
         chunky_ww_test_api::CHUNKY_APP_FULL_GID,
+        chunky_ww_test_api::CHUNKY_APP_WIRE_VERSION,
         api_impl::api_hash(),
+        api_impl::image_facts(),
         ww_client_server::COMPACT_VERSION,
     );
     let mut server = ww_device::Server::new(config, tx, rx, TokioClock::new(), &mut scratch, &mut event_scratch);

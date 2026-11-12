@@ -6,6 +6,9 @@ publish = false
 edition.workspace = true
 repository.workspace = true
 
+[package.metadata.wire_weaver]
+wire = "w1.0"
+
 [dependencies]
 wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver" }
 ww_dfu = { git = "https://github.com/vhrdtech/wire_weaver" }
