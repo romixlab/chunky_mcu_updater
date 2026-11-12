@@ -18,10 +18,11 @@ test-all:
 fuzz cases="20000":
     CHUNKY_FUZZ_CASES={{cases}} cargo test --release -p chunky_sim --test fuzz
 
-# The C reader generated from chunky_format's types against its golden vectors (PROTO-3)
+# The C reader generated from chunky_format's types against its golden vectors (PROTO-3), and every shorter buffer
+# refused (SW-79 views), with AddressSanitizer and UBSan
 test-c:
     mkdir -p target
-    cc -std=c99 -Wall -Wextra -Werror -pedantic -Wconversion -Wsign-conversion -o target/chunky_format_c_test chunky_format/c/test.c
+    cc -std=c99 -Wall -Wextra -Werror -pedantic -Wconversion -Wsign-conversion -g -fsanitize=address,undefined -fno-sanitize-recover=all -o target/chunky_format_c_test chunky_format/c/test.c
     target/chunky_format_c_test
 
 # Regenerate the golden vectors and c/golden.h from the fixed firmware pair (PROTO-3); a test fails when they differ

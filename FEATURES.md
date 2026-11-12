@@ -283,7 +283,9 @@ Design: [SECURITY.md](SECURITY.md).
   734 / 912 bytes (header fast path), 1486 / 1764 with the header through `BufReader`; the hand glue it replaces
   was 892 / 1086 and 1854 / 2130, format 1 hand-written 840 / 1252. So the view is smaller than the fast path
   and kept; on M0 it also beats format 1's hand reader. The C reader walks steps with the generated
-  `chunky_step_tail` (names `chunky_step_write_data_count`, ... changed; `c/test.c` updated).
+  checked views (shrink_wrap SW-79): `chunky_step_view(at, end - at, &s)`, `chunky_step_as_write(&s, &w)`, every
+  reader takes a view; `c/test.c` also refuses every shorter prefix of each plan, step and manifest, in buffers of
+  exactly that length under AddressSanitizer and UBSan (`just test-c`).
   Wired in (P2625#15oct-0919): `chunky` reads format 2 only, through `chunky_format` (descriptor, plan, manifest;
   format 1 is gone), and `chunky_server` writes it; 8-byte `ChunkHash` (MAN-2); the plan's numbers
   `cargo run -p chunky_server --example plan_size`. ww_dfu needs nothing (it carries the header's octets,
