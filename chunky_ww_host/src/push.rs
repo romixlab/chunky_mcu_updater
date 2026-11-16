@@ -7,8 +7,10 @@ use std::time::Duration;
 use chunky_server::Plan;
 use chunky_server::planner::PlanStep;
 use wire_weaver::prelude::MaxLen;
+use wire_weaver_client::ww_error::CommonErrorOwned;
 use wire_weaver_client::{CallError, Error as ClientError, PendingCall};
 use ww_dfu::Error;
+use ww_si::Index;
 
 use crate::client::Stage;
 use crate::timing::Timeouts;
@@ -105,6 +107,8 @@ pub(crate) enum Stopped {
     Replan(Error),
     /// The node refused for good.
     Device(Error),
+    /// The node, or a hub in front of it, refused with a common error.
+    Common(CommonErrorOwned),
     /// Lost replies, more than the host retries.
     Lost(u32),
     /// The link failed.
@@ -166,6 +170,7 @@ pub(crate) async fn push(
                 CallError::Client(e) => Stopped::Client(e),
                 CallError::Unimplemented { .. } => Stopped::Unimplemented,
                 CallError::Device(e) => Stopped::Device(e),
+                CallError::Common(e) => Stopped::Common(e),
             })?;
             counts.calls += 1;
             pending.push_back((at, reply));
@@ -190,7 +195,7 @@ pub(crate) async fn push(
         counts.resends += behind;
         let call = &calls[i];
         at = match error {
-            CallError::Device(Error::OutOfOrder(step)) => first_of(step, 0),
+            CallError::Device(Error::OutOfOrder(step)) => first_of(step.get(), 0),
             // the chunk arrived damaged: all of it again
             CallError::Device(Error::HashMismatch) => {
                 lost += 1;
@@ -200,6 +205,7 @@ pub(crate) async fn push(
                 e @ (Error::Custom(chunky_ww::CUSTOM_NOT_BLANK) | Error::SourceMismatch | Error::Ecc),
             ) => return Err(Stopped::Replan(e)),
             CallError::Device(e) => return Err(Stopped::Device(e)),
+            CallError::Common(e) => return Err(Stopped::Common(e)),
             CallError::Unimplemented { .. } => return Err(Stopped::Unimplemented),
             CallError::Client(ClientError::Timeout) => {
                 lost += 1;
@@ -212,11 +218,12 @@ pub(crate) async fn push(
                         Ok(progress) => break progress,
                         Err(CallError::Client(ClientError::Timeout)) if lost < max_lost => lost += 1,
                         Err(CallError::Device(e)) => return Err(Stopped::Device(e)),
+                        Err(CallError::Common(e)) => return Err(Stopped::Common(e)),
                         Err(CallError::Client(e)) => return Err(Stopped::Client(e)),
                         Err(CallError::Unimplemented { .. }) => return Err(Stopped::Unimplemented),
                     }
                 };
-                first_of(progress.next_step, progress.chunk_offset)
+                first_of(progress.next_step.get(), progress.chunk_offset.get())
             }
             CallError::Client(e) => return Err(Stopped::Client(e)),
         };
@@ -231,8 +238,20 @@ pub(crate) async fn push(
 
 async fn send(stage: &mut Stage, call: &Call<'_>, timeout: Duration) -> Result<Reply, CallError<Error>> {
     match *call {
-        Call::Erase { index, block } => stage.erase(index, block).with_timeout(timeout).send().await,
-        Call::Copy { index, dst, src, hash } => stage.copy(index, dst, src, hash).with_timeout(timeout).send().await,
+        Call::Erase { index, block } => {
+            stage
+                .erase(Index::new(index), Index::new(block))
+                .with_timeout(timeout)
+                .send()
+                .await
+        }
+        Call::Copy { index, dst, src, hash } => {
+            stage
+                .copy(Index::new(index), Index::new(dst), Index::new(src), hash)
+                .with_timeout(timeout)
+                .send()
+                .await
+        }
         Call::Write {
             index,
             dst,
@@ -242,7 +261,7 @@ async fn send(stage: &mut Stage, call: &Call<'_>, timeout: Duration) -> Result<R
         } => {
             let data = MaxLen::new(data.to_vec()).map_err(|_| CallError::Device(Error::PieceTooBig))?;
             stage
-                .write(index, dst, hash, offset, data)
+                .write(Index::new(index), Index::new(dst), hash, Index::new(offset), data)
                 .with_timeout(timeout)
                 .send()
                 .await

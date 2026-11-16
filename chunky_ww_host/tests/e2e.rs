@@ -107,7 +107,7 @@ async fn delta_update_runs_and_confirms() {
 
     let node = Node::open(&client, None, None).await.unwrap();
     assert_eq!(node.geometry, STM32H725IG, "found by geometry id among the presets");
-    assert_eq!(node.info.product_id, PRODUCT);
+    assert_eq!(node.info.app.map(|app| app.product.0), Some(PRODUCT));
     let new_image = seal_for_node(&new, &node.info, &node.geometry, Default::default(), &signer).unwrap();
     drop(node);
 
@@ -121,7 +121,11 @@ async fn delta_update_runs_and_confirms() {
         .unwrap();
 
     assert_eq!(report.node.boot_state, BootState::Confirmed);
-    assert_eq!(report.node.app_version, Some(2), "the running version + 1 by default");
+    assert_eq!(
+        report.node.app.map(|app| app.version.0),
+        Some(2),
+        "the running version + 1 by default"
+    );
     assert_eq!(report.last_result().outcome, Outcome::Confirmed);
     assert_eq!(follow.boots.len(), 1);
     assert_eq!(follow.boots[0].state, chunky::BootState::Trial);
@@ -168,7 +172,7 @@ async fn full_image_on_an_unsigned_device() {
         .await
         .unwrap();
     assert_eq!(report.node.boot_state, BootState::Confirmed);
-    assert_eq!(report.node.app_version, Some(8));
+    assert_eq!(report.node.app.map(|app| app.version.0), Some(8));
     assert_eq!(report.stats.copied, 0, "nothing in common: {:?}", report.stats);
     // 100 chunks of payload and the descriptor's
     assert_eq!(report.stats.written, 101);
@@ -194,7 +198,7 @@ async fn a_lost_reply_is_sent_again() {
         .await
         .unwrap();
     assert_eq!(report.node.boot_state, BootState::Confirmed);
-    assert_eq!(report.node.app_version, Some(2));
+    assert_eq!(report.node.app.map(|app| app.version.0), Some(2));
     assert!(report.counts.resends > 0, "{:?}", report.counts);
     assert_eq!(report.plans, 1, "a lost reply needs no new plan");
 }
@@ -221,7 +225,7 @@ async fn dfu_changed_under_the_plan_is_planned_again() {
         .await
         .unwrap();
     assert_eq!(report.node.boot_state, BootState::Confirmed);
-    assert_eq!(report.node.app_version, Some(2));
+    assert_eq!(report.node.app.map(|app| app.version.0), Some(2));
     assert_eq!(report.plans, 2, "CUSTOM_NOT_BLANK: manifest read again, planned again");
     assert_eq!(seen.replans, 1);
     assert!(
@@ -250,7 +254,11 @@ async fn a_trial_that_never_confirms_is_reverted() {
         .await
         .unwrap();
     assert_eq!(report.node.boot_state, BootState::Reverted);
-    assert_eq!(report.node.app_version, Some(1), "the old image runs again");
+    assert_eq!(
+        report.node.app.map(|app| app.version.0),
+        Some(1),
+        "the old image runs again"
+    );
     assert_eq!(report.last_result().outcome, Outcome::Reverted);
     let states: Vec<_> = follow.boots.iter().map(|b| (b.version, b.state)).collect();
     assert_eq!(
@@ -283,7 +291,7 @@ async fn revert_on_purpose() {
     };
     let (mut node, _client) = reboot_into_trial(node, &mut follow, &mut |_| {}).await.unwrap();
     assert_eq!(node.info.boot_state, BootState::Trial);
-    assert_eq!(node.info.app_version, Some(2));
+    assert_eq!(node.info.app.map(|app| app.version.0), Some(2));
     node.revert().await.unwrap();
     // refused from now on: the trial is given up
     assert!(node.confirm().await.is_err());
@@ -292,6 +300,6 @@ async fn revert_on_purpose() {
     let client = follow.reconnect_now().await;
     let node = Node::open(&client, None, None).await.unwrap();
     assert_eq!(node.info.boot_state, BootState::Reverted);
-    assert_eq!(node.info.app_version, Some(1));
+    assert_eq!(node.info.app.map(|app| app.version.0), Some(1));
     assert_eq!(node.info.last_result.outcome, Outcome::Reverted);
 }

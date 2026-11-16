@@ -25,6 +25,8 @@ use ww_dfu::{
     BootState, BootTarget, ChunkState, Error, MAX_CHUNKS_PAGE, NodeInfo, Progress, Session, Slot, SlotLayout,
     StageLimits, Target,
 };
+use ww_si::units::{Block, Byte, Chunk, Step};
+use ww_si::{Count, Index};
 
 const MAX_MESSAGE: usize = 2048;
 /// USB high speed bulk endpoints.
@@ -230,22 +232,28 @@ impl App {
         Ready(self.node.boot_state().expect("the simulated flash reads"))
     }
 
-    fn boot_confirm(&mut self, _cx: &mut Context<'_, impl BlockingEventOut>) -> RpcResult<Result<(), Error>> {
-        Ready(self.node.confirm())
+    fn boot_confirm(
+        &mut self,
+        _cx: &mut Context<'_, impl BlockingEventOut>,
+    ) -> RpcResult<Result<(), wire_weaver::Error<'_, Error>>> {
+        Ready(self.node.confirm().map_err(Into::into))
     }
 
-    fn boot_revert(&mut self, _cx: &mut Context<'_, impl BlockingEventOut>) -> RpcResult<Result<(), Error>> {
-        Ready(self.node.revert())
+    fn boot_revert(
+        &mut self,
+        _cx: &mut Context<'_, impl BlockingEventOut>,
+    ) -> RpcResult<Result<(), wire_weaver::Error<'_, Error>>> {
+        Ready(self.node.revert().map_err(Into::into))
     }
 
     fn boot_reboot(
         &mut self,
         _cx: &mut Context<'_, impl BlockingEventOut>,
         into: BootTarget,
-    ) -> RpcResult<Result<(), Error>> {
+    ) -> RpcResult<Result<(), wire_weaver::Error<'_, Error>>> {
         // B135: the updater is the ROM DFU, not simulated here
         if into == BootTarget::Updater {
-            return Ready(Err(Error::Unsupported));
+            return Ready(Err(Error::Unsupported.into()));
         }
         self.reboot = Some(into);
         Ready(Ok(()))
@@ -255,28 +263,28 @@ impl App {
         &mut self,
         _cx: &mut Context<'_, impl BlockingEventOut>,
         slot: Slot,
-    ) -> RpcResult<Result<SlotLayout, Error>> {
-        Ready(self.node.layout(slot))
+    ) -> RpcResult<Result<SlotLayout, wire_weaver::Error<'_, Error>>> {
+        Ready(self.node.layout(slot).map_err(Into::into))
     }
 
     fn inventory_manifest_digest(
         &mut self,
         _cx: &mut Context<'_, impl BlockingEventOut>,
         slot: Slot,
-    ) -> RpcResult<Result<[u8; 8], Error>> {
-        Ready(self.node.manifest_digest(slot))
+    ) -> RpcResult<Result<[u8; 8], wire_weaver::Error<'_, Error>>> {
+        Ready(self.node.manifest_digest(slot).map_err(Into::into))
     }
 
     fn inventory_chunks(
         &mut self,
         _cx: &mut Context<'_, impl BlockingEventOut>,
         slot: Slot,
-        first: u16,
-        count: u16,
-    ) -> RpcResult<Result<MaxLen<RefVec<'_, ChunkState>, { MAX_CHUNKS_PAGE }>, Error>> {
-        Ready(match self.node.chunks(slot, first, count, &mut self.page) {
+        first: Index<Chunk, u16>,
+        count: Count<Chunk, u16>,
+    ) -> RpcResult<Result<MaxLen<RefVec<'_, ChunkState>, { MAX_CHUNKS_PAGE }>, wire_weaver::Error<'_, Error>>> {
+        Ready(match self.node.chunks(slot, first.get(), count.get(), &mut self.page) {
             Ok(n) => Ok(MaxLen::new(RefVec::Slice { slice: &self.page[..n] }).unwrap()),
-            Err(e) => Err(e),
+            Err(e) => Err(e.into()),
         })
     }
 
@@ -289,7 +297,7 @@ impl App {
         _cx: &mut Context<'_, impl BlockingEventOut>,
         target: Target,
         header: MaxLen<RefVec<'_, u8>, { ww_dfu::MAX_HEADER_LEN }>,
-    ) -> RpcResult<Result<Session, Error>> {
+    ) -> RpcResult<Result<Session, wire_weaver::Error<'_, Error>>> {
         let dirty = self.faults.lock().unwrap().dirty_dfu_chunk;
         if let (Some(chunk), false) = (dirty, self.begun) {
             let g = STM32H725IG;
@@ -297,50 +305,64 @@ impl App {
             self.device.flash.borrow_mut().load(at, &vec![0x5A; g.chunk as usize]);
         }
         self.begun = true;
-        Ready(self.node.begin(target, &bytes(&header)))
+        Ready(self.node.begin(target, &bytes(&header)).map_err(Into::into))
     }
 
     fn stage_erase(
         &mut self,
         _cx: &mut Context<'_, impl BlockingEventOut>,
-        index: u32,
-        block: u16,
-    ) -> RpcResult<Result<(), Error>> {
-        self.step(index);
-        Ready(self.node.erase(index, block))
+        index: Index<Step, u32>,
+        block: Index<Block, u16>,
+    ) -> RpcResult<Result<(), wire_weaver::Error<'_, Error>>> {
+        self.step(index.get());
+        Ready(self.node.erase(index.get(), block.get()).map_err(Into::into))
     }
 
     fn stage_copy(
         &mut self,
         _cx: &mut Context<'_, impl BlockingEventOut>,
-        index: u32,
-        dst: u16,
-        src: u16,
+        index: Index<Step, u32>,
+        dst: Index<Chunk, u16>,
+        src: Index<Chunk, u16>,
         hash: [u8; 8],
-    ) -> RpcResult<Result<(), Error>> {
-        self.step(index);
-        Ready(self.node.copy(index, dst, src, hash))
+    ) -> RpcResult<Result<(), wire_weaver::Error<'_, Error>>> {
+        self.step(index.get());
+        Ready(
+            self.node
+                .copy(index.get(), dst.get(), src.get(), hash)
+                .map_err(Into::into),
+        )
     }
 
     fn stage_write(
         &mut self,
         _cx: &mut Context<'_, impl BlockingEventOut>,
-        index: u32,
-        dst: u16,
+        index: Index<Step, u32>,
+        dst: Index<Chunk, u16>,
         hash: [u8; 8],
-        offset: u32,
+        offset: Index<Byte, u32>,
         data: MaxLen<RefVec<'_, u8>, { ww_dfu::MAX_PIECE_LEN }>,
-    ) -> RpcResult<Result<(), Error>> {
-        self.step(index);
-        Ready(self.node.write(index, dst, hash, offset, &bytes(&data)))
+    ) -> RpcResult<Result<(), wire_weaver::Error<'_, Error>>> {
+        self.step(index.get());
+        Ready(
+            self.node
+                .write(index.get(), dst.get(), hash, offset.get(), &bytes(&data))
+                .map_err(Into::into),
+        )
     }
 
-    fn stage_progress(&mut self, _cx: &mut Context<'_, impl BlockingEventOut>) -> RpcResult<Result<Progress, Error>> {
-        Ready(self.node.progress())
+    fn stage_progress(
+        &mut self,
+        _cx: &mut Context<'_, impl BlockingEventOut>,
+    ) -> RpcResult<Result<Progress, wire_weaver::Error<'_, Error>>> {
+        Ready(self.node.progress().map_err(Into::into))
     }
 
-    fn stage_finish(&mut self, _cx: &mut Context<'_, impl BlockingEventOut>) -> RpcResult<Result<BootState, Error>> {
-        Ready(self.node.finish())
+    fn stage_finish(
+        &mut self,
+        _cx: &mut Context<'_, impl BlockingEventOut>,
+    ) -> RpcResult<Result<BootState, wire_weaver::Error<'_, Error>>> {
+        Ready(self.node.finish().map_err(Into::into))
     }
 
     fn stage_abort(&mut self, _cx: &mut Context<'_, impl BlockingEventOut>) -> RpcResult<()> {

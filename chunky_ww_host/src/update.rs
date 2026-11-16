@@ -16,11 +16,14 @@ use chunky_server::{
     plan,
 };
 use wire_weaver::prelude::MaxLen;
+use wire_weaver_client::ww_error::CommonErrorOwned;
 use wire_weaver_client::{CallError, DynClient, Error as ClientError};
 use ww_dfu::{
     BootState, BootTarget, ChunkState, Error, LastResult, MAX_CHUNKS_PAGE, NodeInfoOwned, Profile, Seal, Slot,
     StageLimits, Target,
 };
+
+use ww_si::{Fixed, Index};
 
 use crate::client::Dfu;
 use crate::push::{self, Counts, Stopped, calls};
@@ -42,6 +45,14 @@ pub enum UpdateError {
         call: &'static str,
         /// What the device answered.
         error: Error,
+    },
+    /// The device, or a hub in front of it, refused a call with a common error (`InUse`, `Busy`, ..).
+    #[error("the device refused {call}: {error:?}")]
+    Common {
+        /// What was called.
+        call: &'static str,
+        /// What the device or the hub answered.
+        error: CommonErrorOwned,
     },
     /// The device does not receive updates in its app: its updater is something else (a boot ROM).
     #[error(
@@ -88,6 +99,7 @@ impl UpdateError {
     fn call(call: &'static str) -> impl Fn(CallError<Error>) -> UpdateError {
         move |e| match e {
             CallError::Device(error) => UpdateError::Refused { call, error },
+            CallError::Common(error) => UpdateError::Common { call, error },
             CallError::Unimplemented { resource } => UpdateError::Unimplemented(resource.to_string()),
             CallError::Client(e) => UpdateError::Link(e),
         }
@@ -190,16 +202,17 @@ pub fn check_image(
     }
     let raw: &[u8; DESCRIPTOR_LEN] = image.last_chunk().expect("as long as ACTIVE");
     let info = read_descriptor_unverified(raw).map_err(|e| wrong(format!("no chunky descriptor: {e:?}")))?;
-    if info.geometry_id != node.geometry_id {
+    if info.geometry_id != node.geometry.0 {
         return Err(wrong(format!(
             "geometry {:#010x}, the device has {:#010x}",
-            info.geometry_id, node.geometry_id
+            info.geometry_id, node.geometry.0
         )));
     }
-    if node.product_id != 0 && info.product_id != node.product_id {
+    let node_product = node_product(node);
+    if node_product != 0 && info.product_id != node_product {
         return Err(wrong(format!(
-            "product {}, the device is product {}",
-            info.product_id, node.product_id
+            "product {}, the device is product {node_product}",
+            info.product_id
         )));
     }
     if info.scheme != scheme(node.seal) {
@@ -240,20 +253,21 @@ pub fn seal_for_node(
             signer.trust().scheme()
         )));
     }
+    let node_product = node_product(node);
     let product_id = match meta.product_id {
-        Some(p) if node.product_id != 0 && p != node.product_id => {
+        Some(p) if node_product != 0 && p != node_product => {
             return Err(wrong(format!(
-                "product {p} given, the device is product {}",
-                node.product_id
+                "product {p} given, the device is product {node_product}"
             )));
         }
         Some(p) => p,
-        None => node.product_id,
+        None => node_product,
     };
+    let running_version = node.app.map_or(0, |app| app.version.0);
     let meta = ImageMeta {
         product_id,
-        version: meta.version.unwrap_or(node.app_version.unwrap_or(0).wrapping_add(1)),
-        security_counter: meta.security_counter.unwrap_or(node.version_floor),
+        version: meta.version.unwrap_or(running_version.wrapping_add(1)),
+        security_counter: meta.security_counter.unwrap_or(node.security_floor.0),
     };
     Ok(build_image(payload, geometry, &meta, signer)?)
 }
@@ -318,15 +332,15 @@ impl Node {
             .await
             .map_err(UpdateError::Link)?;
         let geometry = match geometry {
-            Some(g) if g.id() != info.geometry_id => {
+            Some(g) if g.id() != info.geometry.0 => {
                 return Err(UpdateError::WrongImage(format!(
                     "the geometry given is {:#010x}, the device has {:#010x}",
                     g.id(),
-                    info.geometry_id
+                    info.geometry.0
                 )));
             }
             Some(g) => g,
-            None => *preset_geometry(info.geometry_id).ok_or(UpdateError::UnknownGeometry(info.geometry_id))?,
+            None => *preset_geometry(info.geometry.0).ok_or(UpdateError::UnknownGeometry(info.geometry.0))?,
         };
         let timeouts = timeouts.unwrap_or_else(|| Timeouts::for_geometry(&geometry));
         Ok(Self {
@@ -418,7 +432,7 @@ impl Node {
             let page = self
                 .dfu
                 .inventory
-                .chunks(slot, first, count)
+                .chunks(slot, Index::new(first), Fixed::new(count))
                 .with_timeout(self.timeouts.call)
                 .call()
                 .await
@@ -506,9 +520,9 @@ impl Node {
         let limits = self.limits().await?;
         let in_flight = options
             .in_flight
-            .map_or(limits.in_flight, |n| n.min(limits.in_flight))
+            .map_or(limits.in_flight.get(), |n| n.min(limits.in_flight.get()))
             .max(1);
-        let max_piece = (limits.max_piece as usize).clamp(1, ww_dfu::MAX_PIECE_LEN);
+        let max_piece = (limits.max_piece.get() as usize).clamp(1, ww_dfu::MAX_PIECE_LEN);
         let max_replans = options.max_replans.unwrap_or(3);
         let max_lost = options.max_lost.unwrap_or(8);
         let mut counts = Counts::default();
@@ -542,11 +556,11 @@ impl Node {
             let calls = calls(&plan, max_piece);
             let start = calls
                 .iter()
-                .position(|c| c.index() >= session.resume_from)
+                .position(|c| c.index() >= session.resume_step.get())
                 .unwrap_or(calls.len());
             if session.resumed {
                 progress(Event::Resumed {
-                    from: session.resume_from,
+                    from: session.resume_step.get(),
                 });
             }
             let total: u64 = calls.iter().map(|c| c.weight()).sum();
@@ -582,6 +596,7 @@ impl Node {
                     continue;
                 }
                 Err(Stopped::Device(error)) => return Err(UpdateError::Refused { call: "a step", error }),
+                Err(Stopped::Common(error)) => return Err(UpdateError::Common { call: "a step", error }),
                 Err(Stopped::Lost(n)) => return Err(UpdateError::Lost(n)),
                 Err(Stopped::Client(e)) => return Err(UpdateError::Link(e)),
                 Err(Stopped::Unimplemented) => return Err(UpdateError::Unimplemented("ww_dfu::Stage".into())),
@@ -715,4 +730,9 @@ pub async fn flash(
         node: node.info,
         ..staged
     })
+}
+
+/// The product of the image the node runs, `0` when it runs none it knows (no product to hold an image to).
+fn node_product(node: &NodeInfoOwned) -> u32 {
+    node.app.map_or(0, |app| app.product.0)
 }

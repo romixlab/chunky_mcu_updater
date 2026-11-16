@@ -45,9 +45,13 @@ use wire_weaver::prelude::MaxLen;
 /// The `ww_dfu` crate this one serves, for the firmware's handlers.
 pub use ww_dfu;
 use ww_dfu::{
-    BootState, ChunkState, Error, LastResult, MAX_CHUNKS_PAGE, MAX_PIECE_LEN, MAX_PRODUCT_LEN, NodeInfo, Offers,
-    Outcome, Profile, Progress, Role, Seal, Session, Slot, SlotLayout, SlotSwitch, StageLimits, Target,
+    BootState, ChunkState, Error, GeometryId, ImageInfo, ImageVersion, LastResult, MAX_CHUNKS_PAGE, MAX_PIECE_LEN,
+    MAX_PRODUCT_LEN, NodeInfo, Offers, Outcome, ProductId, Profile, Progress, Role, Seal, SecurityCounter, Session,
+    Slot, SlotLayout, SlotSwitch, StageLimits, Target,
 };
+/// The counted units of `ww_dfu`'s typed numbers (`Index<Step>`, `Bytes`), for the firmware's handlers.
+pub use ww_si;
+use ww_si::{Fixed, Index};
 
 /// `Error::Custom` code: the chunk a COPY or WRITE goes to is not blank (programmed, or torn by a cut). Nothing was
 /// written. The host planned against a manifest that is no longer true: it reads the manifest again and plans
@@ -183,11 +187,11 @@ where
         let last_result = match boot_state {
             chunky::BootState::Reverted => LastResult {
                 outcome: Outcome::Reverted,
-                version: 0,
+                version: None,
             },
             _ => LastResult {
                 outcome: Outcome::Nothing,
-                version: 0,
+                version: None,
             },
         };
         Ok(Self {
@@ -236,14 +240,17 @@ where
                 _ => SlotSwitch::Remap,
             }),
             product: MaxLen::new(self.config.product).expect("checked in new"),
-            geometry_id: self.config.geometry.id(),
-            product_id: self.running.product_id,
+            geometry: GeometryId(self.config.geometry.id()),
             seal: match self.config.trust.scheme() {
                 Scheme::Unsigned => Seal::Unsigned,
                 Scheme::Ed25519 => Seal::Ed25519,
             },
-            app_version: Some(self.running.version),
-            version_floor: self.effective_floor(),
+            app: Some(ImageInfo {
+                product: ProductId(self.running.product_id),
+                version: ImageVersion(self.running.version),
+                security_counter: SecurityCounter(self.running.security_counter),
+            }),
+            security_floor: SecurityCounter(self.effective_floor()),
             manifest_digest: self.active_digest,
             boot_state: ww_state(self.boot_state),
             last_result: self.last_result,
@@ -279,7 +286,7 @@ where
         if self.boot_state == chunky::BootState::Confirmed {
             self.last_result = LastResult {
                 outcome: Outcome::Confirmed,
-                version: self.running.version,
+                version: Some(ImageVersion(self.running.version)),
             };
         }
         Ok(())
@@ -311,10 +318,10 @@ where
     pub fn layout(&self, _slot: Slot) -> Result<SlotLayout, Error> {
         let geometry = self.config.geometry;
         Ok(SlotLayout {
-            chunk_size: geometry.chunk,
-            chunk_count: geometry.chunks() as u16,
-            erase_size: geometry.erase,
-            erase_count: geometry.blocks() as u16,
+            chunk_size: Fixed::new(geometry.chunk),
+            chunks: Fixed::new(geometry.chunks() as u16),
+            erase_size: Fixed::new(geometry.erase),
+            erase_blocks: Fixed::new(geometry.blocks() as u16),
         })
     }
 
@@ -371,11 +378,14 @@ where
     pub fn limits(&self) -> StageLimits {
         let limits = self.config.limits;
         StageLimits {
-            max_piece: limits.max_piece,
-            in_flight: limits.in_flight,
+            max_piece: u16::try_from(limits.max_piece)
+                .ok()
+                .and_then(|n| Fixed::try_new(n).ok())
+                .expect("Node::new checked 1..=MAX_PIECE_LEN"),
+            in_flight: Fixed::try_new(limits.in_flight).expect("Node::new checked it is not zero"),
             live: true,
             stored: false,
-            plan_area: 0,
+            plan_area: None.into(),
             writes_in_background: limits.writes_in_background,
         }
     }
@@ -392,9 +402,10 @@ where
             }
             self.piece = None;
             return Ok(Session {
-                steps: applier.step_count(),
+                steps: Fixed::new(applier.step_count()),
                 resumed: true,
-                resume_from: applier.steps_done(),
+                resume_step: Index::new(applier.steps_done()),
+                resume_byte: Index::new(0),
             });
         }
         let header: &[u8; PLAN_HEADER_LEN] = header.try_into().map_err(|_| Error::BadHeader)?;
@@ -412,7 +423,7 @@ where
             Err(e) => {
                 self.last_result = LastResult {
                     outcome: Outcome::Rejected,
-                    version: 0,
+                    version: None,
                 };
                 return Err(self.error(e));
             }
@@ -422,9 +433,10 @@ where
         self.piece = None;
         self.finished = false;
         Ok(Session {
-            steps,
+            steps: Fixed::new(steps),
             resumed: false,
-            resume_from: 0,
+            resume_step: Index::new(0),
+            resume_byte: Index::new(0),
         })
     }
 
@@ -466,7 +478,7 @@ where
             return Err(Error::OutOfRange);
         }
         if index > done {
-            return Err(Error::OutOfOrder(done));
+            return Err(Error::OutOfOrder(Index::new(done)));
         }
         if index < done {
             // A piece of a step that ran: the same step, and these bytes are in its chunk.
@@ -509,7 +521,7 @@ where
             };
         }
         if offset > current.filled {
-            return Err(Error::OutOfOrder(done));
+            return Err(Error::OutOfOrder(Index::new(done)));
         }
         self.chunk[range].copy_from_slice(data);
         current.filled = end as u32;
@@ -536,10 +548,10 @@ where
         };
         let next_step = applier.steps_done();
         Ok(Progress {
-            steps: applier.step_count(),
-            next_step,
-            chunk_offset: self.piece.filter(|p| p.index == next_step).map_or(0, |p| p.filled),
-            plan_bytes: 0,
+            steps: Fixed::new(applier.step_count()),
+            next_step: Index::new(next_step),
+            chunk_offset: Index::new(self.piece.filter(|p| p.index == next_step).map_or(0, |p| p.filled)),
+            plan_offset: Index::new(0),
         })
     }
 
@@ -570,7 +582,7 @@ where
             Err(e) => {
                 self.last_result = LastResult {
                     outcome: Outcome::Rejected,
-                    version,
+                    version: Some(ImageVersion(version)),
                 };
                 Err(match e {
                     ApplyError::Image(_) | ApplyError::WrongImage | ApplyError::BodyLength => Error::VerifyFailed,
@@ -585,7 +597,7 @@ where
         if let Some(applier) = self.session.take() {
             self.last_result = LastResult {
                 outcome: Outcome::Rejected,
-                version: applier.descriptor().version,
+                version: Some(ImageVersion(applier.descriptor().version)),
             };
         }
         self.piece = None;
@@ -649,7 +661,7 @@ pub fn map_error(e: ApplyError, state: chunky::BootState) -> Error {
         ApplyError::BodyLength | ApplyError::OutOfOrder | ApplyError::OutOfRange | ApplyError::BadData => {
             Error::OutOfRange
         }
-        ApplyError::Ahead { expected } => Error::OutOfOrder(expected),
+        ApplyError::Ahead { expected } => Error::OutOfOrder(Index::new(expected)),
         ApplyError::NotSameStep => Error::StepMismatch,
         ApplyError::Incomplete => Error::Incomplete,
         ApplyError::DataMismatch => Error::HashMismatch,

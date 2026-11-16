@@ -5,6 +5,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Builds on wire_weaver's layers branch and `ww_dfu` w2.0 typed numbers: steps, chunks, offsets as `Index`/`Count` (NET-1, NET-2).
+- `NodeInfo` reports the running image as product, version and security counter; the floor is `security_floor` (NET-1).
+- `ww-chunky status` shows the running image's security counter next to its version (NET-2).
+- `chunky_ww_host` reports a common error (`InUse`, `Busy`) of the device or a hub as `UpdateError::Common` (NET-2).
+
 ## [0.11.10] - 2026-11-12
 
 ### Changed

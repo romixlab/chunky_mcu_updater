@@ -215,6 +215,7 @@ async fn reboot(into: Into, device: &DynClient) -> Result<()> {
             .is_ok_and(|n| matches!(n.profile, Profile::AB(_)) && n.offers.stage);
     dfu.boot.reboot(target).call().await.map_err(|e| match e {
         CallError::Device(e) => anyhow!("device refused to reboot: {e:?}"),
+        CallError::Common(e) => anyhow!("device refused to reboot: {e:?}"),
         CallError::Unimplemented { resource } => anyhow!("the device doesn't implement {resource}"),
         CallError::Client(e) => not_found(e),
     })?;
@@ -239,8 +240,8 @@ async fn status(device: &DynClient) -> Result<()> {
         println!(
             "{:12} pieces of {} B, {} in flight{}",
             style("stage").bold(),
-            l.max_piece,
-            l.in_flight,
+            l.max_piece.get(),
+            l.in_flight.get(),
             if l.writes_in_background {
                 ""
             } else {
@@ -252,23 +253,28 @@ async fn status(device: &DynClient) -> Result<()> {
 }
 
 fn print_node(n: &NodeInfoOwned) {
-    let layout = match preset_name(n.geometry_id) {
-        Some(name) => format!("{name} ({:#010x})", n.geometry_id),
-        None => format!("{:#010x}", n.geometry_id),
+    let geometry = n.geometry.0;
+    let layout = match preset_name(geometry) {
+        Some(name) => format!("{name} ({geometry:#010x})"),
+        None => format!("{geometry:#010x}"),
     };
     println!("{:12} {:?}, {:?}", style("node").bold(), n.role, n.profile);
     println!(
         "{:12} {} (id {})",
         style("product").bold(),
         escape(n.product.as_str()),
-        n.product_id
+        n.app.map_or(0, |app| app.product.0)
     );
     println!("{:12} {layout}", style("layout").bold());
     println!(
         "{:12} {}, floor {}, seal {:?}",
         style("version").bold(),
-        n.app_version.map_or("no valid image".into(), version),
-        n.version_floor,
+        n.app.map_or("no valid image".into(), |app| format!(
+            "{}, security counter {}",
+            version(app.version.0),
+            app.security_counter.0
+        )),
+        n.security_floor.0,
         n.seal
     );
     println!("{:12} {}", style("boot state").bold(), state_style(n.boot_state));
@@ -280,8 +286,8 @@ fn print_node(n: &NodeInfoOwned) {
         Outcome::Nothing => style(outcome).dim(),
     };
     match last.version {
-        0 => println!("{:12} {outcome}", style("last update").bold()),
-        v => println!("{:12} {outcome} ({})", style("last update").bold(), version(v)),
+        None => println!("{:12} {outcome}", style("last update").bold()),
+        Some(v) => println!("{:12} {outcome} ({})", style("last update").bold(), version(v.0)),
     }
 }
 
@@ -344,7 +350,7 @@ async fn flash(args: FlashArgs, device: DynClient, selection: &Selection, meta: 
             eprintln!(
                 "{} no --fw-version: sealed as {}, the running version + 1",
                 style("note").yellow(),
-                version(node.info.app_version.unwrap_or(0).wrapping_add(1))
+                version(node.info.app.map_or(0, |app| app.version.0).wrapping_add(1))
             );
         }
         let meta = SealFor {
@@ -360,7 +366,7 @@ async fn flash(args: FlashArgs, device: DynClient, selection: &Selection, meta: 
         style("image").bold(),
         version(info.version),
         image.len() / 1024,
-        preset_name(node.info.geometry_id).unwrap_or("this layout")
+        preset_name(node.info.geometry.0).unwrap_or("this layout")
     );
 
     let options = Options {
@@ -401,7 +407,7 @@ async fn flash(args: FlashArgs, device: DynClient, selection: &Selection, meta: 
     ui.done();
     let (node, _device) = done?;
     let n = &node.info;
-    if n.boot_state == BootState::Confirmed && n.app_version == Some(info.version) {
+    if n.boot_state == BootState::Confirmed && n.app.map(|app| app.version.0) == Some(info.version) {
         println!(
             "{} {} runs and confirmed itself, {:.1?} in all",
             style("✔").green(),
@@ -413,7 +419,7 @@ async fn flash(args: FlashArgs, device: DynClient, selection: &Selection, meta: 
     print_node(n);
     bail!(
         "the new image did not stay: the device runs {} ({:?}, last update {:?})",
-        n.app_version.map_or("nothing".into(), version),
+        n.app.map_or("nothing".into(), |app| version(app.version.0)),
         n.boot_state,
         n.last_result.outcome
     )
@@ -502,7 +508,7 @@ impl Ui {
                 eprintln!(
                     "{} running {}, {}",
                     style("back").bold(),
-                    n.app_version.map_or("nothing".into(), version),
+                    n.app.map_or("nothing".into(), |app| version(app.version.0)),
                     state_style(n.boot_state)
                 );
             }
@@ -579,6 +585,7 @@ impl Reconnect for UsbReconnect {
 fn call_error(e: CallError<ww_dfu::Error>) -> anyhow::Error {
     match e {
         CallError::Device(e) => anyhow!("the device refused: {e:?}"),
+        CallError::Common(e) => anyhow!("the device refused: {e:?}"),
         CallError::Unimplemented { resource } => anyhow!("the device doesn't implement {resource}"),
         CallError::Client(e) => not_found(e),
     }

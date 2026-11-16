@@ -215,16 +215,16 @@ pub fn push<M: FlashModel, B: Backend<M>>(
                 Err(e) => return Err(Stopped::Failed(e)),
             }
         };
-        assert_eq!(session.steps as usize, plan.steps.len());
+        assert_eq!(session.steps.get() as usize, plan.steps.len());
         if session.resumed {
             pushed.resumed += 1;
         }
-        let calls = calls(&plan, limits.max_piece as usize);
+        let calls = calls(&plan, limits.max_piece.get() as usize);
         let first_of = |step: u32| calls.iter().position(|c| c.index() == step).unwrap_or(calls.len());
-        let mut at = first_of(session.resume_from);
+        let mut at = first_of(session.resume_step.get());
         while at < calls.len() {
             // Up to `in_flight` calls go out; the node runs those that arrive, in order.
-            let batch = &calls[at..(at + limits.in_flight as usize).min(calls.len())];
+            let batch = &calls[at..(at + limits.in_flight.get() as usize).min(calls.len())];
             let replies: Vec<Option<Result<(), Error>>> = batch
                 .iter()
                 .map(|call| {
@@ -238,7 +238,7 @@ pub fn push<M: FlashModel, B: Backend<M>>(
                     Some(Ok(())) => continue,
                     // No reply: send again from here.
                     None => next = at + i,
-                    Some(Err(Error::OutOfOrder(step))) => next = first_of(*step),
+                    Some(Err(Error::OutOfOrder(step))) => next = first_of(step.get()),
                     Some(Err(Error::Custom(CUSTOM_NOT_BLANK))) => {
                         pushed.replans += 1;
                         until_heard(link, || node.abort());

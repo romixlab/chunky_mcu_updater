@@ -11,6 +11,7 @@ use chunky_sim::{Device, H7, H7Mini, SIM_PRODUCT, SimNode, Swap};
 use chunky_ww::ww_dfu::{
     self, BootState, ChunkState, Error, MAX_CHUNKS_PAGE, Outcome, Profile, Role, Slot, SlotSwitch, Target,
 };
+use chunky_ww::ww_si::Index;
 use chunky_ww::{CUSTOM_NOT_BLANK, Limits};
 use common::ww::{Call, Link, OverWw, Pushed, calls, limits, push, read_manifest};
 use common::{App, World, run_update_by, signer};
@@ -84,10 +85,18 @@ fn node_says_who_it_is() {
         let info = node.node();
         assert_eq!((info.role, info.profile), (Role::App, Profile::AB(SlotSwitch::Copy)));
         assert_eq!(*info.product, SIM_PRODUCT);
-        assert_eq!(info.geometry_id, STM32H725IG.id());
-        assert_eq!((info.product_id, info.seal), (common::PRODUCT, ww_dfu::Seal::Ed25519));
-        assert_eq!(info.app_version, Some(1));
-        assert_eq!((info.version_floor, info.boot_state), (1, BootState::Confirmed));
+        assert_eq!(info.geometry, ww_dfu::GeometryId(STM32H725IG.id()));
+        assert_eq!(info.seal, ww_dfu::Seal::Ed25519);
+        let app = info.app.expect("the running image");
+        assert_eq!(app.product, ww_dfu::ProductId(common::PRODUCT));
+        assert_eq!(
+            (app.version, app.security_counter),
+            (ww_dfu::ImageVersion(1), ww_dfu::SecurityCounter(1))
+        );
+        assert_eq!(
+            (info.security_floor, info.boot_state),
+            (ww_dfu::SecurityCounter(1), BootState::Confirmed)
+        );
         assert_eq!(info.last_result.outcome, Outcome::Nothing);
         assert!(info.offers.boot_control && info.offers.inventory && info.offers.stage && !info.offers.stage_bulk);
 
@@ -102,11 +111,16 @@ fn node_says_who_it_is() {
         assert_eq!(manifest, Manifest::parse(&device.manifest().unwrap()).unwrap());
 
         let layout = node.layout(Slot::Inactive).unwrap();
-        assert_eq!((layout.chunk_size, layout.chunk_count), (2048, 128));
-        assert_eq!((layout.erase_size, layout.erase_count), (128 * 1024, 2));
+        assert_eq!((layout.chunk_size.get(), layout.chunks.get()), (2048, 128));
+        assert_eq!((layout.erase_size.get(), layout.erase_blocks.get()), (128 * 1024, 2));
         let limits = node.limits();
         assert_eq!(
-            (limits.max_piece, limits.in_flight, limits.live, limits.stored),
+            (
+                limits.max_piece.get(),
+                limits.in_flight.get(),
+                limits.live,
+                limits.stored
+            ),
             (1024, 1, true, false)
         );
     });
@@ -184,7 +198,7 @@ fn resent_steps_are_answered_and_skipped() {
 
         // Ahead of its turn: the node says which step it expects.
         let ahead = calls.iter().find(|c| c.index() == 3).unwrap();
-        assert_eq!(ahead.send::<H7, Swap>(node), Err(Error::OutOfOrder(1)));
+        assert_eq!(ahead.send::<H7, Swap>(node), Err(Error::OutOfOrder(Index::new(1))));
 
         // A window of steps sent again, whole: every call is answered, nothing is written twice.
         let window: Vec<Call> = calls
@@ -225,7 +239,10 @@ fn resent_steps_are_answered_and_skipped() {
         );
 
         let progress = node.progress().unwrap();
-        assert_eq!((progress.next_step, progress.steps), (12, plan.steps.len() as u32));
+        assert_eq!(
+            (progress.next_step.get(), progress.steps.get()),
+            (12, plan.steps.len() as u32)
+        );
     });
 }
 
@@ -248,7 +265,7 @@ fn a_write_is_put_together_from_pieces() {
         };
 
         assert_eq!(node.write(index, dst, hash, 0, &piece(0)), Ok(()));
-        assert_eq!(node.progress().unwrap().chunk_offset, 512);
+        assert_eq!(node.progress().unwrap().chunk_offset.get(), 512);
         // The same piece again, and the chunk sent over from its start: answered.
         assert_eq!(node.write(index, dst, hash, 0, &piece(0)), Ok(()));
         assert_eq!(node.write(index, dst, hash, 256, &piece(0)[256..]), Ok(()));
@@ -256,7 +273,7 @@ fn a_write_is_put_together_from_pieces() {
         assert_eq!(node.write(index, dst, hash, 0, &piece(1)), Err(Error::StepMismatch));
         assert_eq!(
             node.write(index, dst, hash, 1024, &piece(2)),
-            Err(Error::OutOfOrder(index))
+            Err(Error::OutOfOrder(Index::new(index)))
         );
         assert_eq!(
             node.write(index, dst + 1, hash, 512, &piece(1)),
@@ -276,10 +293,10 @@ fn a_write_is_put_together_from_pieces() {
         node.write(index, dst, hash, 512, &[0x11; 512]).unwrap();
         node.write(index, dst, hash, 1024, &piece(2)).unwrap();
         assert_eq!(node.write(index, dst, hash, 1536, &piece(3)), Err(Error::HashMismatch));
-        assert_eq!(node.progress().unwrap().chunk_offset, 0);
-        assert_eq!(node.progress().unwrap().next_step, index);
+        assert_eq!(node.progress().unwrap().chunk_offset.get(), 0);
+        assert_eq!(node.progress().unwrap().next_step.get(), index);
         send_all(node, &calls[first..first + 4]);
-        assert_eq!(node.progress().unwrap().next_step, index + 1);
+        assert_eq!(node.progress().unwrap().next_step.get(), index + 1);
         // And a piece of it again, after it ran: answered from the flash.
         send_all(node, &calls[first + 2..first + 3]);
         assert_eq!(node.write(index, dst, hash, 0, &[0x11; 512]), Err(Error::StepMismatch));
@@ -301,7 +318,7 @@ fn begin_with_the_same_header_resumes() {
         let calls = calls(&plan, 1024);
         let header = header(&plan);
         let session = node.begin(Target::Live, &header).unwrap();
-        assert_eq!((session.resumed, session.resume_from), (false, 0));
+        assert_eq!((session.resumed, session.resume_step.get()), (false, 0));
         let half = calls.iter().position(|c| c.index() == 20).unwrap();
         // Up to the middle of a WRITE: what is in of it is dropped on resume.
         let middle = half
@@ -310,13 +327,13 @@ fn begin_with_the_same_header_resumes() {
                 .position(|c| matches!(c, Call::Write { offset: 1024, .. }))
                 .unwrap();
         send_all(node, &calls[..middle]);
-        let next = node.progress().unwrap().next_step;
-        assert_eq!(node.progress().unwrap().chunk_offset, 1024);
+        let next = node.progress().unwrap().next_step.get();
+        assert_eq!(node.progress().unwrap().chunk_offset.get(), 1024);
 
         // The host lost its state: it asks again with the same plan.
         let session = node.begin(Target::Live, &header).unwrap();
-        assert_eq!((session.resumed, session.resume_from), (true, next));
-        assert_eq!(node.progress().unwrap().chunk_offset, 0);
+        assert_eq!((session.resumed, session.resume_step.get()), (true, next));
+        assert_eq!(node.progress().unwrap().chunk_offset.get(), 0);
         // Another plan while this one is open: abort first.
         let other = plan_on(node, &world, &world.old_release);
         assert_eq!(node.begin(Target::Live, &self::header(&other)), Err(Error::Busy));
@@ -422,7 +439,7 @@ fn revert_on_trial_and_the_floor_after_confirm() {
     let (_, state) = device.boot_running().unwrap().unwrap();
     assert_eq!(state, ChunkyState::Trial);
     with_node(&device, limits(1024, 1), |node| {
-        assert_eq!(node.node().app_version, Some(2));
+        assert_eq!(node.node().app.map(|app| app.version), Some(ww_dfu::ImageVersion(2)));
         let plan = plan_on(node, &world, &world.old_release);
         assert_eq!(
             node.begin(Target::Live, &header(&plan)),
@@ -442,13 +459,16 @@ fn revert_on_trial_and_the_floor_after_confirm() {
     let device = staged(&world);
     device.boot().unwrap();
     with_node(&device, limits(1024, 1), |node| {
-        assert_eq!(node.node().version_floor, 1);
+        assert_eq!(node.node().security_floor, ww_dfu::SecurityCounter(1));
         assert_eq!(node.confirm(), Ok(()));
         let info = node.node();
-        assert_eq!((info.boot_state, info.version_floor), (BootState::Confirmed, 2));
+        assert_eq!(
+            (info.boot_state, info.security_floor),
+            (BootState::Confirmed, ww_dfu::SecurityCounter(2))
+        );
         assert_eq!(
             (info.last_result.outcome, info.last_result.version),
-            (Outcome::Confirmed, 2)
+            (Outcome::Confirmed, Some(ww_dfu::ImageVersion(2)))
         );
         assert_eq!(node.confirm(), Ok(()), "confirm on a confirmed image does nothing");
         let back = plan_on(node, &world, &world.old_release);

@@ -733,7 +733,7 @@ proptest! {
                     WwCall::Honest(n) => {
                         for _ in 0..*n {
                             cursor = match honest[cursor % honest.len()].send::<chunky_sim::H7, Swap>(&mut node) {
-                                Err(chunky_ww::ww_dfu::Error::OutOfOrder(step)) => first_of(step),
+                                Err(chunky_ww::ww_dfu::Error::OutOfOrder(step)) => first_of(step.get()),
                                 _ => cursor + 1,
                             };
                         }
