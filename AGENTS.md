@@ -47,17 +47,19 @@ moves one of those lines changes SECURITY.md in the same commit and is planned o
 
 chunky takes wire_weaver (`shrink_wrap`, `wire_weaver`, `wire_weaver_client`, `ww_dfu`, `ww_client_server`, `ww_device`,
 `ww_ecc_flash`) as git dependencies on https://github.com/vhrdtech/wire_weaver, pinned by Cargo.lock, so a fresh clone
-builds without sibling checkouts. Nothing in wire_weaver depends on this repository: `ww dfu flash` runs the `ww-chunky`
-plugin of this repo (`ww_chunky/`, built on `chunky_ww_host` and `wire_weaver_cli::plugin`), found on PATH.
+builds without sibling checkouts. Only wire_weaver's `ww_tools` (the `ww` binary) depends on this repository, by git:
+it links `chunky_ww_cli`, so `ww chunky ...` and `ww dfu flash` need no plugin; a `ww` without it runs `ww-chunky`.
 `just deps-pull` moves the pin to wire_weaver's main (commit the lock). To work on both repos at once, put an
 uncommitted `.cargo/config.toml` in this checkout with `[patch."https://github.com/vhrdtech/wire_weaver"]` entries
 pointing at the paths of the sibling `../wire_weaver`; the lock then gets path entries, so don't commit it in that state.
 
 ## Layout
 
-- `ww_chunky/` — the `ww-chunky` binary, a plugin of `ww` (wire_weaver): `flash` (delta, trial, confirm) with `status`,
-  `confirm`, `revert`, `reboot`, `ww dfu flash` runs it. The connection options, `ww.toml` and the completion are
-  wire_weaver's (`wire_weaver_cli::plugin`); `just install` puts it on PATH next to `chunky`.
+- `chunky_ww_cli/` — the commands, a library: `flash` (delta, trial, confirm) with `status`, `confirm`, `revert`,
+  `reboot`, registered as `ww chunky` with `wire_weaver_cli::registry`; `ww dfu flash` runs its `flash`.
+- `ww_chunky/` — the `ww-chunky` binary, a thin main over `chunky_ww_cli` and a plugin of a `ww` that doesn't link
+  it. The connection options, `ww.toml` and the completion are wire_weaver's (`wire_weaver_cli::plugin`); `just
+  install` puts it on PATH next to `chunky`.
 Cargo workspace, edition 2024. Pure-Rust crates only (no `-sys`, no `cc`/`bindgen`): check `cargo tree` when
 adding a dependency.
 

@@ -5,6 +5,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `chunky_ww_cli`: the update commands as a library, registered as `ww chunky` in a `ww` that links it (NET-2).
+
 ### Changed
 
 - Builds on wire_weaver's layers branch and `ww_dfu` w2.0 typed numbers: steps, chunks, offsets as `Index`/`Count` (NET-1, NET-2).
