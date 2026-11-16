@@ -21,9 +21,9 @@ use wire_weaver_client::ww_client_server::ErrorKindOwned;
 use wire_weaver_client::{CallError, ClientConfig, ClientMeta, DynClient, Error};
 use ww_dfu::{BootState, BootTarget, NodeInfoOwned, Outcome, Profile, Seal};
 
-/// What `ww-chunky` does.
+/// What `ww-chunky` and `ww chunky` do.
 #[derive(Subcommand)]
-pub(crate) enum Command {
+pub enum Command {
     /// Reboot the device into its updater (default) or its app, through `ww_dfu::BootControl`
     ///
     /// Works with any device implementing `ww_dfu::BootControl` anywhere in its API, whatever the API and its
@@ -56,8 +56,9 @@ pub(crate) enum Command {
     Revert,
 }
 
+/// The arguments of `flash`.
 #[derive(Args)]
-pub(crate) struct FlashArgs {
+pub struct FlashArgs {
     /// ELF file (detected by its magic bytes), an image sealed for the device (as long as ACTIVE, with its
     /// descriptor), or a raw binary payload
     #[arg(value_hint = ValueHint::FilePath)]
@@ -96,8 +97,9 @@ pub(crate) struct FlashArgs {
     no_reboot: bool,
 }
 
+/// What `reboot` reboots into.
 #[derive(Copy, Clone, ValueEnum)]
-pub(crate) enum Into {
+pub enum Into {
     /// The updater (bootloader with a transport or recovery app), to receive an update there
     Updater,
     /// The app, the normal reset: switches to a staged image or applies a stored plan if there is one
@@ -138,12 +140,7 @@ fn preset_name(id: u32) -> Option<&'static str> {
 
 /// `meta` is what `device` was connected with: a command that changes the device takes it whole while a ww hub serves
 /// it to other programs too (SRV-32), and the claim is this client instance's.
-pub(crate) async fn run_command(
-    cmd: Command,
-    device: DynClient,
-    selection: &Selection,
-    meta: &ClientMeta,
-) -> Result<()> {
+pub async fn run_command(cmd: Command, device: DynClient, selection: &Selection, meta: &ClientMeta) -> Result<()> {
     let purpose = match &cmd {
         Command::Status => None,
         Command::Reboot { .. } => Some("ww-chunky reboot".to_string()),

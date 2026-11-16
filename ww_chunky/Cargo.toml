@@ -11,14 +11,11 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
-chunky_ww_host.workspace = true
+chunky_ww_cli.workspace = true
 clap = { version = "4", features = ["derive", "env"] }
 clap_complete = { version = "4", features = ["unstable-dynamic"] }
-console = "0.16"
-indicatif = "0.18"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
 wire_weaver_cli = { git = "https://github.com/vhrdtech/wire_weaver" }
 wire_weaver_client = { git = "https://github.com/vhrdtech/wire_weaver", features = ["hub"] }
-ww_dfu = { git = "https://github.com/vhrdtech/wire_weaver" }

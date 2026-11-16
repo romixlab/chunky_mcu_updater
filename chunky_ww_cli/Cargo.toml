@@ -1,0 +1,17 @@
+[package]
+name = "chunky_ww_cli"
+description = "The chunky update commands (flash, status, confirm, revert, reboot) for the ww command line (wire_weaver)"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow = "1"
+chunky_ww_host.workspace = true
+clap = { version = "4", features = ["derive", "env"] }
+console = "0.16"
+indicatif = "0.18"
+tokio = { version = "1", features = ["time"] }
+wire_weaver_cli = { git = "https://github.com/vhrdtech/wire_weaver" }
+wire_weaver_client = { git = "https://github.com/vhrdtech/wire_weaver", features = ["hub"] }
+ww_dfu = { git = "https://github.com/vhrdtech/wire_weaver" }

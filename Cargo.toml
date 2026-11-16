@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["chunky", "chunky_format", "chunky_swap", "chunky_bank", "chunky_ww", "chunky_server", "chunky_sim", "embassy_torn", "chunky_cli", "ww_chunky", "chunky_ww_host", "chunky_ww_host/tests/api", "bench/bench_layout", "bench/fw_image"]
+members = ["chunky", "chunky_format", "chunky_swap", "chunky_bank", "chunky_ww", "chunky_server", "chunky_sim", "embassy_torn", "chunky_cli", "chunky_ww_cli", "ww_chunky", "chunky_ww_host", "chunky_ww_host/tests/api", "bench/bench_layout", "bench/fw_image"]
 
 [workspace.package]
 version = "0.11.10"
@@ -17,6 +17,7 @@ chunky_ww_host = { path = "chunky_ww_host" }
 chunky_server = { path = "chunky_server" }
 chunky_sim = { path = "chunky_sim" }
 chunky_cli = { path = "chunky_cli" }
+chunky_ww_cli = { path = "chunky_ww_cli" }
 bench_layout = { path = "bench/bench_layout" }
 embedded-storage = "0.3.1"
 embassy-boot = "0.7.0"

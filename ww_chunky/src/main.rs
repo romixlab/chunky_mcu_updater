@@ -4,8 +4,6 @@
 //! its name.
 #![forbid(unsafe_code)]
 
-mod commands;
-
 use anyhow::Result;
 use clap::{CommandFactory, FromArgMatches, Parser};
 use wire_weaver_cli::plugin::{self, DeviceArgs, Selection};
@@ -32,7 +30,7 @@ struct Cli {
     device: DeviceArgs,
 
     #[command(subcommand)]
-    command: commands::Command,
+    command: chunky_ww_cli::Command,
 }
 
 fn main() -> Result<()> {
@@ -55,5 +53,5 @@ async fn run() -> Result<()> {
     // the hub holds for its own calls
     let meta = ClientMeta::new();
     let device = plugin::connect(&selection, &meta).await?;
-    commands::run_command(cli.command, device, &selection, &meta).await
+    chunky_ww_cli::run_command(cli.command, device, &selection, &meta).await
 }
