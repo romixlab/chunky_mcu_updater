@@ -16,10 +16,11 @@ fn stdout(out: &Output) -> String {
 }
 
 #[test]
-fn version_has_sha_and_build_time() {
+fn version_has_sha_and_commit_time() {
     let out = stdout(&ww_chunky(&["--version"], &[]));
     assert!(out.starts_with("ww-chunky 0."), "{out}");
-    assert!(out.contains(", built "), "{out}");
+    assert!(out.contains(", commit "), "{out}");
+    assert!(out.trim_end().ends_with(" UTC)") || out.contains("unknown"), "{out}");
 }
 
 #[test]

@@ -46,10 +46,11 @@ fn payload(seed: u8, len: usize) -> Vec<u8> {
 }
 
 #[test]
-fn version_has_sha_and_build_time() {
+fn version_has_sha_and_commit_time() {
     let v = ok(&["--version"]);
     assert!(v.starts_with("chunky "), "{v}");
-    assert!(v.contains("built "), "{v}");
+    assert!(v.contains(", commit "), "{v}");
+    assert!(v.trim_end().ends_with(" UTC)") || v.contains("unknown"), "{v}");
 }
 
 #[test]

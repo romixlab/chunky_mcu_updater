@@ -23,8 +23,8 @@ const VERSION: &str = concat!(
     env!("CARGO_PKG_VERSION"),
     " (",
     env!("CHUNKY_GIT_SHA"),
-    ", built ",
-    env!("CHUNKY_BUILD_TIME"),
+    ", commit ",
+    env!("CHUNKY_COMMIT_TIME"),
     ")"
 );
 
