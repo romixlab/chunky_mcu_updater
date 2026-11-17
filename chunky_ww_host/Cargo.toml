@@ -15,9 +15,9 @@ tracing = "0.1"
 # wire_weaver from GitHub, pinned by Cargo.lock; local sibling work: see AGENTS.md "wire_weaver dependency".
 wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver" }
 wire_weaver_client = { git = "https://github.com/vhrdtech/wire_weaver" }
-ww_dfu = { git = "https://github.com/vhrdtech/wire_weaver" }
+ww_dfu = { git = "https://github.com/vhrdtech/ww_stdlib" }
 # the generated ww_dfu client names exact_units types through ww_si's re-export
-ww_si = { git = "https://github.com/vhrdtech/wire_weaver", features = ["counting", "information", "std"] }
+ww_si = { git = "https://github.com/vhrdtech/ww_base", features = ["counting", "information", "std"] }
 
 [dev-dependencies]
 chunky_sim.workspace = true

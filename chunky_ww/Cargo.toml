@@ -14,10 +14,10 @@ unsigned = ["chunky/unsigned"]
 chunky.workspace = true
 embedded-storage.workspace = true
 # wire_weaver from GitHub, pinned by Cargo.lock; local sibling work: see AGENTS.md "wire_weaver dependency".
-ww_dfu = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+ww_dfu = { git = "https://github.com/vhrdtech/ww_stdlib", default-features = false }
 wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
 # the counted units of ww_dfu's typed numbers (steps, chunks, bytes)
-ww_si = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["counting", "information"] }
+ww_si = { git = "https://github.com/vhrdtech/ww_base", default-features = false, features = ["counting", "information"] }
 
 [dev-dependencies]
 chunky = { workspace = true, features = ["ed25519", "unsigned"] }

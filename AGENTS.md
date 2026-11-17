@@ -45,13 +45,15 @@ moves one of those lines changes SECURITY.md in the same commit and is planned o
 
 ## wire_weaver dependency
 
-chunky takes wire_weaver (`shrink_wrap`, `wire_weaver`, `wire_weaver_client`, `ww_dfu`, `ww_client_server`, `ww_device`,
-`ww_ecc_flash`) as git dependencies on https://github.com/vhrdtech/wire_weaver, pinned by Cargo.lock, so a fresh clone
-builds without sibling checkouts. Only wire_weaver's `ww_tools` (the `ww` binary) depends on this repository, by git:
-it links `chunky_ww_cli`, so `ww chunky ...` and `ww dfu flash` need no plugin; a `ww` without it runs `ww-chunky`.
-`just deps-pull` moves the pin to wire_weaver's main (commit the lock). To work on both repos at once, put an
-uncommitted `.cargo/config.toml` in this checkout with `[patch."https://github.com/vhrdtech/wire_weaver"]` entries
-pointing at the paths of the sibling `../wire_weaver`; the lock then gets path entries, so don't commit it in that state.
+chunky takes its wire_weaver crates by git, each from its own repository, pinned by Cargo.lock, so a fresh clone
+builds without sibling checkouts: `wire_weaver`, `wire_weaver_cli`, `wire_weaver_client`, `ww_client_server`,
+`ww_device` and `ww_ecc_flash` from https://github.com/vhrdtech/wire_weaver, `shrink_wrap` from
+https://github.com/romixlab/shrink_wrap, `ww_si` from https://github.com/vhrdtech/ww_base and `ww_dfu` from
+https://github.com/vhrdtech/ww_stdlib. Each crate has one copy in the lock (`cargo tree -d`). Only `ww_tools` (the `ww`
+binary) depends on this repository, by git: it links `chunky_ww_cli`, so `ww chunky ...` and `ww dfu flash` need no
+plugin; a `ww` without it runs `ww-chunky`. `just deps-pull` moves every pin to its repository's main (commit the
+lock). To work on several repos at once, put an uncommitted `.cargo/config.toml` in this checkout with a `[patch."URL"]`
+per repository pointing at the sibling checkouts; the lock then gets path entries, so don't commit it in that state.
 
 ## Layout
 

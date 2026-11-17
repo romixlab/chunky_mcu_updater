@@ -82,9 +82,9 @@ install:
     cargo build --profile deploy --locked -p chunky_cli -p ww_chunky
     if command -v tpm >/dev/null; then tpm install target/deploy/chunky; tpm install target/deploy/ww-chunky; else cargo install --locked --path chunky_cli; cargo install --locked --path ww_chunky; fi
 
-# chunky_format, chunky_ww, chunky_ww_host and ww_chunky take wire_weaver from GitHub: move the pin in Cargo.lock to its main (commit the lock)
+# The wire_weaver crates come from GitHub, each from its own repository: move every pin in Cargo.lock to its main (commit the lock)
 deps-pull:
-    cargo update -p wire_weaver
+    cargo update -p wire_weaver -p shrink_wrap -p ww_si -p ww_dfu
 
 # Refuses on local changes (names them, never discards them), before anything is pulled.
 # Bring this PC up to main: pull --ff-only, install (--locked, wire_weaver as pinned), check --version against main
