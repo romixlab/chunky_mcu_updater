@@ -37,7 +37,7 @@ fn run(run: Run<'_>) -> BoxFuture<'_, Result<Ran>> {
 
 inventory::submit! {
     CommandDef::new("chunky", 125, command, run)
-        .globals(&[("", GlobalFlags::DeviceAndTap)])
+        .globals(&[("", GlobalFlags::Device)])
         .connection(connection)
 }
 
