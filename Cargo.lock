@@ -3756,7 +3756,7 @@ dependencies = [
 [[package]]
 name = "ww_dfu"
 version = "0.1.0"
-source = "git+https://github.com/vhrdtech/ww_stdlib#80a258ece497a86eee26e31d1620495ef450c1ea"
+source = "git+https://github.com/vhrdtech/ww_stdlib#d91a3515f5f370581497fd9f17cdfe95fd7bb615"
 dependencies = [
  "ww_api",
  "ww_si",
