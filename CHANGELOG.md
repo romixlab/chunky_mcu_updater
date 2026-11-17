@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.11] - 2026-11-17
+
 ### Added
 
 - `chunky_ww_cli`: the update commands as a library, registered as `ww chunky` in a `ww` that links it (NET-2).
