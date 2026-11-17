@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.11.12] - 2026-11-17
+
 ### Changed
 
 - `ww chunky` drops the tap flags wire_weaver's `ww_tap` removal took with it (`--monitor`, `--capture`): device selection only (NET-2).
