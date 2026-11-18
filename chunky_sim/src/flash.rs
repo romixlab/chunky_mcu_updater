@@ -270,9 +270,8 @@ impl<M: FlashModel> SimFlash<M> {
     pub fn load(&mut self, offset: usize, data: &[u8]) {
         let offset = self.physical(offset, data.len());
         self.mem[offset..offset + data.len()].copy_from_slice(data);
-        for unit in offset / M::UNIT..(offset + data.len()).div_ceil(M::UNIT) {
-            self.bad[unit] = false;
-        }
+        let units = offset / M::UNIT..(offset + data.len()).div_ceil(M::UNIT);
+        self.bad[units].fill(false);
     }
 
     /// The bytes at `offset`, whatever the ECC state.

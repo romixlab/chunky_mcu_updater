@@ -158,10 +158,9 @@ impl Flash {
             return Err(FlashError::PowerLoss);
         }
         self.check(off, buf.len(), 1)?;
-        for w in off / WRITE..(off + buf.len()).div_ceil(WRITE) {
-            if self.faulty[w] {
-                return Err(FlashError::Ecc);
-            }
+        let words = off / WRITE..(off + buf.len()).div_ceil(WRITE);
+        if self.faulty[words].iter().any(|&faulty| faulty) {
+            return Err(FlashError::Ecc);
         }
         buf.copy_from_slice(&self.mem[off..off + buf.len()]);
         Ok(())
