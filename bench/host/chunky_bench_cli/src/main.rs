@@ -59,7 +59,7 @@ struct BenchArgs {
     /// probe-rs target
     #[arg(long, global = true, default_value = "STM32G0B1CEUx")]
     chip: String,
-    /// SWD clock in kHz (Donguru: at most 1000)
+    /// SWD clock in kHz (Portwright: at most 1000)
     #[arg(long, global = true, default_value_t = 1000)]
     speed_khz: u32,
     /// Glitcher serial port (default: the first Xyloni found)
@@ -78,7 +78,7 @@ struct BenchArgs {
 
 #[derive(Clone, Copy, ValueEnum, PartialEq, Eq)]
 enum CutArg {
-    /// Power off through Donguru's Q101/Q102; every restart is a power cycle
+    /// Power off through Portwright's Q101/Q102; every restart is a power cycle
     Power,
     /// NRST low for --width, power stays on; every restart is a reset pulse
     Reset,

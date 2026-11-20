@@ -1,5 +1,5 @@
 //! The device under test over SWD: [`Dut`] is the few raw operations the bench needs, [`ProbeDut`] does them
-//! with probe-rs (Donguru's CMSIS-DAP v2), [`crate::fake`] on a model. Restoring pages and reading a run back
+//! with probe-rs (Portwright's CMSIS-DAP v2), [`crate::fake`] on a model. Restoring pages and reading a run back
 //! are generic on top: [`restore`], [`read_back`].
 
 use crate::fw::Target;
@@ -24,7 +24,7 @@ pub mod flash_regs {
 pub trait Dut {
     /// Connects over SWD without resetting the core.
     fn attach(&mut self) -> Result<()>;
-    /// Lets go of SWD (Donguru floats SWD and CC); the core keeps whatever state it is in.
+    /// Lets go of SWD (Portwright floats SWD and CC); the core keeps whatever state it is in.
     fn detach(&mut self);
     /// Reads memory; an error for a range the bus refuses (flash with an ECC double error).
     fn read(&mut self, addr: u32, buf: &mut [u8]) -> Result<()>;

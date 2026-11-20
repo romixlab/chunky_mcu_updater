@@ -330,7 +330,7 @@ Design: [SECURITY.md](SECURITY.md).
   Built (`just bench-fw`: four images and ELFs in `bench/fw/out`, sizes in `bench/README.md`) and run on the
   bench; status LED on PB14.
 - ✅ **HW-4 power-cut-bench-harness** — `chunky-bench` in `bench/host` (own workspace; library `chunky_bench`,
-  thin CLI): the glitcher (`glitch` git dep, push-pull power cut on Donguru Q101) and probe-rs (Donguru CMSIS-DAP
+  thin CLI): the glitcher (`glitch` git dep, push-pull power cut on Portwright Q101) and probe-rs (Portwright CMSIS-DAP
   v2, no hidapi), restores S0 page-wise, cuts after a swept delay from the PA6 trigger, reads back
   ACTIVE/DFU/STATE, report, IPSR, ECCR and SR, classifies old/new/mixed/lost/brick with `embassy_torn::classify`;
   `snapshot`, `measure`, `run`, resumable `sweep` (coarse, then fine around outcome changes) into a CSV with raw

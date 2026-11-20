@@ -16,11 +16,11 @@ tpm: P2625#11oct-1213.
 
 | What | From | To |
 | --- | --- | --- |
-| DUT power | Donguru Q102 drain, header J101 pin 10 (VBUS_SW) | B129 J1 pin 16 (+5V0) |
-| Power switch | Xyloni glitcher `od_out` H8 = J1-15, push-pull (GLT-8, pins GLT-10) | Donguru Q101 gate (Donguru PD1 left as input) |
+| DUT power | Portwright Q102 drain, header J101 pin 10 (VBUS_SW) | B129 J1 pin 16 (+5V0) |
+| Power switch | Xyloni glitcher `od_out` H8 = J1-15, push-pull (GLT-8, pins GLT-10) | Portwright Q101 gate (Portwright PD1 left as input) |
 | Trigger | B129 PA6, J1 pin 18 | Xyloni glitcher trigger in H6 = J1-18 (internal weak pull-down) |
 | Marker | Xyloni glitcher marker G8 = J1-14 | M2K DIO2 |
-| SWD + CC | Donguru USB-C plug, CMSIS-DAP (typec_dongle 0.3.0, *without* `plug-vbus-on`) | B129 USB-C J3 (SWD on SBU) |
+| SWD + CC | Portwright USB-C plug, CMSIS-DAP (typec_dongle 0.3.0, *without* `plug-vbus-on`) | B129 USB-C J3 (SWD on SBU) |
 | GND | B129 J1 pin 7 | Xyloni J1-3 / J1-20, M2K (1- and 2- too) |
 | M2K A1 (1+) | B129 J2 pin 11 (+3V3) | |
 | M2K A2 (2+) | B129 J1 pin 16 (+5V0) | |
@@ -32,7 +32,7 @@ tpm: P2625#11oct-1213.
 Glitcher idle (`od_out` high) = DUT powered; low = cut. The cut is a fair power loss: Q102 opens and the
 DUT's own capacitance (>110 uF on +5V0) decays through the DUT; there is no crowbar to GND.
 
-Donguru drives CC and SWD only while a probe-rs session is attached (`--probe c0de:cafe`, up to 1 MHz) and
+Portwright drives CC and SWD only while a probe-rs session is attached (`--probe c0de:cafe`, up to 1 MHz) and
 floats both when it detaches, so nothing on the plug powers or holds the DUT during a run.
 
 **Back-power hazard (found and fixed, 12 Oct 2026).** Anything that pulls PA6 up while the DUT is off feeds
@@ -73,7 +73,7 @@ so both builds are cut against the same erase: PA6 goes high, `pre_trigger_us` b
 
 1. Power on (glitcher idle), probe-rs attach.
 2. Restore S0, the config and both images (only pages that differ are written).
-3. Detach (Donguru floats SWD and CC).
+3. Detach (Portwright floats SWD and CC).
 4. Power-cycle with the glitcher (software trigger, `off` long enough for a clean power-on reset), then arm it:
    trigger H6 rising, delay `d`, `stuck --level low` for `off`. The bootloader waits `boot_delay_ms` first, so
    arming cannot race the boot.
@@ -101,7 +101,7 @@ screenshot into `bench/results/measure-<date>/`.
 
 - **M0 static, no firmware needed.** DUT off (`fpga-glitch stuck --level low --width 2s --now`, or Xyloni
   unplugged): 3V3 must fall below 0.1 V and stay there. A plateau is back-power: check the glitcher pins (GLT-10: H6/H8/G8, not F7/F6/E6), the
-  M2K DIO pins, Donguru SWD/CC (no probe-rs session). Then glitcher idle: +5V0 ~5 V, 3V3 3.3 V.
+  M2K DIO pins, Portwright SWD/CC (no probe-rs session). Then glitcher idle: +5V0 ~5 V, 3V3 3.3 V.
 - **M1 erase time.** Flash measure mode (`Mode::Measure`, `pre_trigger_us = 0`, `period_ms = 100`): PA6 is high
   for exactly one SCRATCH erase. Over 20+ erases note min / typical / max of the PA6 high time = `t_erase`. The
   app also stores the last erase time in the report (`erase_us`) as a cross-check.
@@ -214,8 +214,8 @@ decoded yet.
 The same run with NRST pulled low in the middle of the erase instead of the power going away: the erase stops
 within nanoseconds at full supply voltage, where a power cut lets it run on for ~45 ms on a falling 3V3.
 
-Wiring (instead of the power switch): glitcher H8 (Xyloni J1-15) moves from Donguru's Q101 gate to B129 J1 pin 6
-(PF2-NRST). The B129 is powered permanently through the USB-C plug by a Donguru build with
+Wiring (instead of the power switch): glitcher H8 (Xyloni J1-15) moves from Portwright's Q101 gate to B129 J1 pin 6
+(PF2-NRST). The B129 is powered permanently through the USB-C plug by a Portwright build with
 `--features plug-vbus-on`; Q102 stays off and its wire idle. Trigger and marker stay.
 
 - **Set the glitcher to open-drain before the wire goes onto NRST.** The bitstream comes up push-pull and idle

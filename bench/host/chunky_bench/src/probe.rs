@@ -1,5 +1,5 @@
-//! [`Dut`] over probe-rs: Donguru's CMSIS-DAP v2 (`c0de:cafe`), STM32G0B1CEUx, SWD at up to 1 MHz. Attaches
-//! without a reset; detaching drops the session, and Donguru floats SWD and CC.
+//! [`Dut`] over probe-rs: Portwright's CMSIS-DAP v2 (`c0de:cafe`), STM32G0B1CEUx, SWD at up to 1 MHz. Attaches
+//! without a reset; detaching drops the session, and Portwright floats SWD and CC.
 
 use crate::dut::Dut;
 use anyhow::{Context, Result, anyhow};

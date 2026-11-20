@@ -1,4 +1,4 @@
-//! What stops the DUT: the Xyloni glitcher's `od_out` (GLT-8). As a power switch it is push-pull on Donguru's
+//! What stops the DUT: the Xyloni glitcher's `od_out` (GLT-8). As a power switch it is push-pull on Portwright's
 //! Q101 gate: idle high = powered, low = cut. As a reset line it is open-drain on the DUT's NRST: low for a
 //! short pulse, never driven high ([`Cut`]). [`Power`] is what the run loop needs; [`Glitcher`] does it on the bench, [`crate::fake`]
 //! in the tests.

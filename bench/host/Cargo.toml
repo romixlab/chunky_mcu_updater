@@ -14,7 +14,7 @@ bench_layout = { path = "../bench_layout" }
 embassy_torn = { path = "../../embassy_torn" }
 anyhow = "1"
 csv = "1"
-# CMSIS-DAP v2 (bulk, nusb) only: Donguru has no HID (v1) interface, so no hidapi.
+# CMSIS-DAP v2 (bulk, nusb) only: Portwright has no HID (v1) interface, so no hidapi.
 probe-rs = { version = "0.32", default-features = false, features = ["builtin-targets"] }
 # The Xyloni glitcher (fpga_tools release 0.7.0, GLT-8 push-pull od_out).
 glitch = { git = "ssh://git@github.com/vhrdtech/fpga_tools.git", rev = "4e55b51" }

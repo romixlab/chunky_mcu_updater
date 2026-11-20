@@ -3,7 +3,7 @@
 //! left over SWD and classifies it with embassy_torn's page classifier: `old`, `new`, `mixed`, `lost`, `brick`.
 //!
 //! - [`Power`]: the power switch ([`Glitcher`], the Xyloni glitcher's push-pull `od_out`).
-//! - [`Dut`]: SWD access ([`ProbeDut`], probe-rs over Donguru's CMSIS-DAP v2).
+//! - [`Dut`]: SWD access ([`ProbeDut`], probe-rs over Portwright's CMSIS-DAP v2).
 //! - [`fake`]: both on a model running the real embassy-boot, for tests and dry runs.
 //! - [`run_once`], [`run_sweep`]: one run, and a resumable sweep into a CSV with raw dumps.
 //!
