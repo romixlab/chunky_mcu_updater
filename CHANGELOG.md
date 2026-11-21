@@ -5,6 +5,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Docs name the Portwright repo `portwright` (was `typec_dongle`, renamed).
+
 ## [0.11.12] - 2026-11-17
 
 ### Changed

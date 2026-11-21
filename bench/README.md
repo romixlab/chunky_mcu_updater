@@ -20,7 +20,7 @@ tpm: P2625#11oct-1213.
 | Power switch | Xyloni glitcher `od_out` H8 = J1-15, push-pull (GLT-8, pins GLT-10) | Portwright Q101 gate (Portwright PD1 left as input) |
 | Trigger | B129 PA6, J1 pin 18 | Xyloni glitcher trigger in H6 = J1-18 (internal weak pull-down) |
 | Marker | Xyloni glitcher marker G8 = J1-14 | M2K DIO2 |
-| SWD + CC | Portwright USB-C plug, CMSIS-DAP (typec_dongle 0.3.0, *without* `plug-vbus-on`) | B129 USB-C J3 (SWD on SBU) |
+| SWD + CC | Portwright USB-C plug, CMSIS-DAP (portwright 0.3.0, *without* `plug-vbus-on`) | B129 USB-C J3 (SWD on SBU) |
 | GND | B129 J1 pin 7 | Xyloni J1-3 / J1-20, M2K (1- and 2- too) |
 | M2K A1 (1+) | B129 J2 pin 11 (+3V3) | |
 | M2K A2 (2+) | B129 J1 pin 16 (+5V0) | |
